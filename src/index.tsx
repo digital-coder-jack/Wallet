@@ -272,13 +272,14 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
 
       <!-- Quick Actions -->
       <div class="scroll-row">
-        <button class="btn-primary" onclick="openModal('sendModal')" style="flex-shrink:0;white-space:nowrap;"><i class="fas fa-paper-plane"></i> Send</button>
-        <button class="btn-green" onclick="openModal('receiveModal')" style="flex-shrink:0;white-space:nowrap;"><i class="fas fa-qrcode"></i> Receive</button>
-        <button class="btn-secondary" onclick="showPage('swap')" style="flex-shrink:0;white-space:nowrap;"><i class="fas fa-exchange-alt"></i> Swap</button>
-        <button class="btn-secondary" onclick="showPage('payments')" style="flex-shrink:0;white-space:nowrap;"><i class="fas fa-university"></i> Payments</button>
-        <button class="btn-secondary" onclick="showPage('defi')" style="flex-shrink:0;white-space:nowrap;"><i class="fas fa-layer-group"></i> DeFi</button>
-        <button class="btn-secondary" onclick="showPage('bridge')" style="flex-shrink:0;white-space:nowrap;"><i class="fas fa-link"></i> Bridge</button>
-        <button class="btn-secondary" onclick="showPage('nft')" style="flex-shrink:0;white-space:nowrap;"><i class="fas fa-image"></i> NFTs</button>
+        <button class="btn-primary" onclick="openModal('sendModal')" style="flex-shrink:0;white-space:nowrap;" id="qaBtnSend"><i class="fas fa-paper-plane"></i> Send</button>
+        <button class="btn-green" onclick="openModal('receiveModal')" style="flex-shrink:0;white-space:nowrap;" id="qaBtnReceive"><i class="fas fa-qrcode"></i> Receive</button>
+        <button class="btn-secondary" onclick="openDeposit()" style="flex-shrink:0;white-space:nowrap;background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(6,182,212,0.1));border-color:rgba(16,185,129,0.4);"><i class="fas fa-arrow-circle-down" style="color:#10b981;"></i> Deposit</button>
+        <button class="btn-secondary" onclick="openWithdraw()" style="flex-shrink:0;white-space:nowrap;background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(249,115,22,0.1));border-color:rgba(245,158,11,0.4);"><i class="fas fa-arrow-circle-up" style="color:#f59e0b;"></i> Withdraw</button>
+        <button class="btn-secondary" onclick="showPage('swap')" style="flex-shrink:0;white-space:nowrap;" id="qaBtnSwap"><i class="fas fa-exchange-alt"></i> Swap</button>
+        <button class="btn-secondary" onclick="showPage('payments')" style="flex-shrink:0;white-space:nowrap;" id="qaBtnPayments"><i class="fas fa-university"></i> Payments</button>
+        <button class="btn-secondary" onclick="showPage('bridge')" style="flex-shrink:0;white-space:nowrap;" id="qaBtnBridge"><i class="fas fa-link"></i> Bridge</button>
+        <button class="btn-secondary" onclick="showPage('nft')" style="flex-shrink:0;white-space:nowrap;" id="qaBtnNFTs"><i class="fas fa-image"></i> NFTs</button>
       </div>
 
       <!-- Chart -->
@@ -349,7 +350,11 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
   <div id="page-portfolio" class="page">
     <div class="header">
       <div class="grad-text" style="font-size:20px;font-weight:800;">Portfolio</div>
-      <button onclick="openModal('addTokenModal')" class="btn-primary" style="padding:8px 14px;font-size:13px;"><i class="fas fa-plus"></i> Add Token</button>
+      <div style="display:flex;gap:6px;">
+        <button onclick="openDeposit()" class="btn-green" style="padding:6px 10px;font-size:12px;"><i class="fas fa-arrow-circle-down"></i> Deposit</button>
+        <button onclick="openWithdraw()" class="btn-secondary" style="padding:6px 10px;font-size:12px;"><i class="fas fa-arrow-circle-up"></i> Withdraw</button>
+        <button onclick="openModal('addTokenModal')" class="btn-primary" style="padding:6px 10px;font-size:12px;"><i class="fas fa-plus"></i></button>
+      </div>
     </div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
       <div class="card" style="padding:20px;">
@@ -453,17 +458,17 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
             <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);"></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:20px;"><div><div style="font-size:10px;opacity:0.7;">HDFC Bank</div><div style="font-size:12px;font-weight:600;">Debit Card</div></div><div style="font-size:11px;font-weight:800;opacity:0.9;">VISA</div></div>
             <div style="font-size:18px;font-weight:600;letter-spacing:3px;margin-bottom:16px;">4532 •••• •••• 7891</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:10px;opacity:0.7;">VALID THRU <span style="font-weight:600;">12/27</span></div><button style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:4px 10px;color:white;font-size:11px;cursor:pointer;" onclick="showToast('Card payment initiated ✓','success')">Pay</button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:10px;opacity:0.7;">VALID THRU <span style="font-weight:600;">12/27</span></div><button style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:4px 10px;color:white;font-size:11px;cursor:pointer;" onclick="openCardPay('4532 •••• •••• 7891','ARJUN KUMAR','12/27')">Pay</button></div>
           </div>
           <div style="border-radius:18px;padding:20px;background:linear-gradient(135deg,#22409A,#3350A3);position:relative;overflow:hidden;box-shadow:0 8px 25px rgba(0,0,0,0.4);">
             <div style="display:flex;justify-content:space-between;margin-bottom:20px;"><div><div style="font-size:10px;opacity:0.7;">SBI Card</div><div style="font-size:12px;font-weight:600;">Credit Card</div></div><div style="font-size:11px;font-weight:800;opacity:0.9;">MasterCard</div></div>
             <div style="font-size:18px;font-weight:600;letter-spacing:3px;margin-bottom:16px;">5291 •••• •••• 3421</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:10px;opacity:0.7;">VALID THRU <span style="font-weight:600;">08/26</span></div><button style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:4px 10px;color:white;font-size:11px;cursor:pointer;" onclick="showToast('Card payment initiated ✓','success')">Pay</button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:10px;opacity:0.7;">VALID THRU <span style="font-weight:600;">08/26</span></div><button style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:4px 10px;color:white;font-size:11px;cursor:pointer;" onclick="openCardPay('5291 •••• •••• 3421','ARJUN KUMAR','08/26')">Pay</button></div>
           </div>
           <div style="border-radius:18px;padding:20px;background:linear-gradient(135deg,#F06B23,#F07B43);position:relative;overflow:hidden;box-shadow:0 8px 25px rgba(0,0,0,0.4);">
             <div style="display:flex;justify-content:space-between;margin-bottom:20px;"><div><div style="font-size:10px;opacity:0.7;">ICICI Bank</div><div style="font-size:12px;font-weight:600;">Credit Card</div></div><div style="font-size:11px;font-weight:800;opacity:0.9;">VISA</div></div>
             <div style="font-size:18px;font-weight:600;letter-spacing:3px;margin-bottom:16px;">4716 •••• •••• 5632</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:10px;opacity:0.7;">VALID THRU <span style="font-weight:600;">03/28</span></div><button style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:4px 10px;color:white;font-size:11px;cursor:pointer;" onclick="showToast('Card payment initiated ✓','success')">Pay</button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:10px;opacity:0.7;">VALID THRU <span style="font-weight:600;">03/28</span></div><button style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:4px 10px;color:white;font-size:11px;cursor:pointer;" onclick="openCardPay('4716 •••• •••• 5632','ARJUN KUMAR','03/28')">Pay</button></div>
           </div>
           <button class="btn-secondary" style="width:100%;"><i class="fas fa-plus"></i> Add New Card</button>
         </div>
@@ -474,19 +479,13 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
         <div class="card" style="padding:16px;margin-bottom:12px;">
           <div style="font-size:14px;font-weight:700;margin-bottom:12px;">Linked Bank Accounts</div>
           <div id="bankList"></div>
-          <button class="btn-secondary" style="width:100%;margin-top:12px;"><i class="fas fa-plus"></i> Link New Account</button>
+          <button class="btn-secondary" style="width:100%;margin-top:12px;" onclick="openLinkBank()"><i class="fas fa-plus"></i> Link New Account</button>
         </div>
         <div class="card" style="padding:16px;">
           <div style="font-size:14px;font-weight:700;margin-bottom:12px;">NEFT / RTGS Transfer</div>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <input class="input-field" placeholder="Account Number" />
-            <input class="input-field" placeholder="IFSC Code" />
-            <input class="input-field" placeholder="Beneficiary Name" />
-            <input class="input-field" placeholder="Amount (&#8377;)" type="number" />
-            <div style="display:flex;gap:8px;">
-              <button class="btn-primary" style="flex:1;" onclick="showToast('NEFT transfer initiated ✓','success')"><i class="fas fa-exchange-alt"></i> NEFT</button>
-              <button class="btn-secondary" style="flex:1;" onclick="showToast('RTGS transfer initiated ✓','success')">RTGS</button>
-            </div>
+            <div style="font-size:12px;color:var(--text-muted);">Use the Net Banking modal for full NEFT/RTGS/IMPS transfers with beneficiary details.</div>
+            <button class="btn-primary" style="width:100%;padding:14px;" onclick="openModal('netBankModal')"><i class="fas fa-exchange-alt"></i> Make Net Banking Transfer</button>
           </div>
         </div>
       </div>
@@ -494,29 +493,29 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
       <!-- Bill Pay Tab -->
       <div id="tab-BillPay" class="pay-tab" style="display:none;">
         <div class="grid-3" style="gap:12px;margin-bottom:12px;">
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);"><div style="font-size:24px;color:#f59e0b;margin-bottom:6px;"><i class="fas fa-bolt"></i></div><div style="font-size:12px;font-weight:600;">Electricity</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(6,182,212,0.08);border-color:rgba(6,182,212,0.2);"><div style="font-size:24px;color:#06b6d4;margin-bottom:6px;"><i class="fas fa-tint"></i></div><div style="font-size:12px;font-weight:600;">Water</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2);"><div style="font-size:24px;color:#ef4444;margin-bottom:6px;"><i class="fas fa-gas-pump"></i></div><div style="font-size:12px;font-weight:600;">Gas</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.2);"><div style="font-size:24px;color:#6366f1;margin-bottom:6px;"><i class="fas fa-wifi"></i></div><div style="font-size:12px;font-weight:600;">Internet</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.2);"><div style="font-size:24px;color:#10b981;margin-bottom:6px;"><i class="fas fa-mobile-alt"></i></div><div style="font-size:12px;font-weight:600;">Mobile</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.2);"><div style="font-size:24px;color:#8b5cf6;margin-bottom:6px;"><i class="fas fa-tv"></i></div><div style="font-size:12px;font-weight:600;">DTH</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(236,72,153,0.08);border-color:rgba(236,72,153,0.2);"><div style="font-size:24px;color:#ec4899;margin-bottom:6px;"><i class="fas fa-shield-alt"></i></div><div style="font-size:12px;font-weight:600;">Insurance</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.2);"><div style="font-size:24px;color:#f97316;margin-bottom:6px;"><i class="fas fa-credit-card"></i></div><div style="font-size:12px;font-weight:600;">Credit Card</div></div>
-          <div onclick="openModal('billModal')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(132,204,22,0.08);border-color:rgba(132,204,22,0.2);"><div style="font-size:24px;color:#84cc16;margin-bottom:6px;"><i class="fas fa-home"></i></div><div style="font-size:12px;font-weight:600;">Rent</div></div>
+          <div onclick="openBillModal('Electricity')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);"><div style="font-size:24px;color:#f59e0b;margin-bottom:6px;"><i class="fas fa-bolt"></i></div><div style="font-size:12px;font-weight:600;">Electricity</div></div>
+          <div onclick="openBillModal('Water')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(6,182,212,0.08);border-color:rgba(6,182,212,0.2);"><div style="font-size:24px;color:#06b6d4;margin-bottom:6px;"><i class="fas fa-tint"></i></div><div style="font-size:12px;font-weight:600;">Water</div></div>
+          <div onclick="openBillModal('Gas')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2);"><div style="font-size:24px;color:#ef4444;margin-bottom:6px;"><i class="fas fa-gas-pump"></i></div><div style="font-size:12px;font-weight:600;">Gas</div></div>
+          <div onclick="openBillModal('Internet')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.2);"><div style="font-size:24px;color:#6366f1;margin-bottom:6px;"><i class="fas fa-wifi"></i></div><div style="font-size:12px;font-weight:600;">Internet</div></div>
+          <div onclick="openBillModal('Mobile Recharge')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.2);"><div style="font-size:24px;color:#10b981;margin-bottom:6px;"><i class="fas fa-mobile-alt"></i></div><div style="font-size:12px;font-weight:600;">Mobile</div></div>
+          <div onclick="openBillModal('DTH')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.2);"><div style="font-size:24px;color:#8b5cf6;margin-bottom:6px;"><i class="fas fa-tv"></i></div><div style="font-size:12px;font-weight:600;">DTH</div></div>
+          <div onclick="openBillModal('Insurance')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(236,72,153,0.08);border-color:rgba(236,72,153,0.2);"><div style="font-size:24px;color:#ec4899;margin-bottom:6px;"><i class="fas fa-shield-alt"></i></div><div style="font-size:12px;font-weight:600;">Insurance</div></div>
+          <div onclick="openBillModal('Credit Card')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.2);"><div style="font-size:24px;color:#f97316;margin-bottom:6px;"><i class="fas fa-credit-card"></i></div><div style="font-size:12px;font-weight:600;">Credit Card</div></div>
+          <div onclick="openBillModal('Rent')" class="card" style="padding:14px;text-align:center;cursor:pointer;background:rgba(132,204,22,0.08);border-color:rgba(132,204,22,0.2);"><div style="font-size:24px;color:#84cc16;margin-bottom:6px;"><i class="fas fa-home"></i></div><div style="font-size:12px;font-weight:600;">Rent</div></div>
         </div>
         <div class="card" style="padding:16px;">
           <div style="font-size:14px;font-weight:700;margin-bottom:12px;">Upcoming Bills</div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
             <div style="display:flex;align-items:center;gap:10px;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-bolt" style="color:#f59e0b;"></i></div><div><div style="font-size:13px;font-weight:600;">BSES Electricity</div><div style="font-size:11px;color:#ef4444;">Due in 3 days</div></div></div>
-            <div style="text-align:right;"><div style="font-size:13px;font-weight:700;">&#8377;1,247</div><button class="btn-primary" style="padding:4px 10px;font-size:10px;margin-top:2px;" onclick="openModal('billModal')">Pay Now</button></div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:700;">&#8377;1,247</div><button class="btn-primary" style="padding:4px 10px;font-size:10px;margin-top:2px;" onclick="openBillModal('Electricity')">Pay Now</button></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
             <div style="display:flex;align-items:center;gap:10px;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-wifi" style="color:#6366f1;"></i></div><div><div style="font-size:13px;font-weight:600;">Airtel Broadband</div><div style="font-size:11px;color:var(--text-muted);">Due in 8 days</div></div></div>
-            <div style="text-align:right;"><div style="font-size:13px;font-weight:700;">&#8377;899</div><button class="btn-primary" style="padding:4px 10px;font-size:10px;margin-top:2px;" onclick="openModal('billModal')">Pay Now</button></div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:700;">&#8377;899</div><button class="btn-primary" style="padding:4px 10px;font-size:10px;margin-top:2px;" onclick="openBillModal('Internet')">Pay Now</button></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
             <div style="display:flex;align-items:center;gap:10px;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(0,76,143,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-credit-card" style="color:#004C8F;"></i></div><div><div style="font-size:13px;font-weight:600;">HDFC Credit Card</div><div style="font-size:11px;color:var(--text-muted);">Due in 15 days</div></div></div>
-            <div style="text-align:right;"><div style="font-size:13px;font-weight:700;">&#8377;12,450</div><button class="btn-primary" style="padding:4px 10px;font-size:10px;margin-top:2px;" onclick="openModal('billModal')">Pay Now</button></div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:700;">&#8377;12,450</div><button class="btn-primary" style="padding:4px 10px;font-size:10px;margin-top:2px;" onclick="openBillModal('Credit Card')">Pay Now</button></div>
           </div>
         </div>
       </div>
@@ -668,79 +667,13 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
         <button class="tab-item" onclick="switchDefiTab('Farming',this)">Farming</button>
       </div>
 
-      <!-- DeFi Positions -->
-      <div class="card" style="padding:14px;border-left:4px solid #B6509E;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-          <div><div style="font-size:15px;font-weight:700;">Aave V3 <span class="chain-badge">ETH</span></div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Lending</div></div>
-          <span class="badge badge-green" style="font-size:12px;font-weight:700;">8.42% APY</span>
-        </div>
-        <div class="grid-2" style="gap:8px;margin-bottom:10px;">
-          <div style="background:var(--bg-card2);border-radius:8px;padding:8px;"><div style="font-size:10px;color:var(--text-muted);">Deposited</div><div style="font-size:14px;font-weight:700;">&#8377;45,000</div></div>
-          <div style="background:rgba(16,185,129,0.1);border-radius:8px;padding:8px;"><div style="font-size:10px;color:var(--text-muted);">Earned</div><div style="font-size:14px;font-weight:700;color:#10b981;">&#8377;1,890</div></div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-primary" style="flex:1;padding:8px;font-size:12px;" onclick="showToast('Depositing to Aave V3... ✓','success')"><i class="fas fa-plus"></i> Deposit</button>
-          <button class="btn-secondary" style="flex:1;padding:8px;font-size:12px;" onclick="showToast('Withdrawal initiated ✓','info')"><i class="fas fa-minus"></i> Withdraw</button>
-        </div>
-      </div>
-      <div class="card" style="padding:14px;border-left:4px solid #FF007A;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-          <div><div style="font-size:15px;font-weight:700;">Uniswap V3 <span class="chain-badge">ETH</span></div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">DEX LP</div></div>
-          <span class="badge badge-green" style="font-size:12px;font-weight:700;">24.5% APY</span>
-        </div>
-        <div class="grid-2" style="gap:8px;margin-bottom:10px;">
-          <div style="background:var(--bg-card2);border-radius:8px;padding:8px;"><div style="font-size:10px;color:var(--text-muted);">Deposited</div><div style="font-size:14px;font-weight:700;">&#8377;28,000</div></div>
-          <div style="background:rgba(16,185,129,0.1);border-radius:8px;padding:8px;"><div style="font-size:10px;color:var(--text-muted);">Earned</div><div style="font-size:14px;font-weight:700;color:#10b981;">&#8377;3,430</div></div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-primary" style="flex:1;padding:8px;font-size:12px;"><i class="fas fa-plus"></i> Deposit</button>
-          <button class="btn-secondary" style="flex:1;padding:8px;font-size:12px;"><i class="fas fa-minus"></i> Withdraw</button>
-        </div>
-      </div>
-      <div class="card" style="padding:14px;border-left:4px solid #40649F;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-          <div><div style="font-size:15px;font-weight:700;">Curve 3Pool <span class="chain-badge">ETH</span></div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Stable LP</div></div>
-          <span class="badge badge-green" style="font-size:12px;font-weight:700;">12.8% APY</span>
-        </div>
-        <div class="grid-2" style="gap:8px;margin-bottom:10px;">
-          <div style="background:var(--bg-card2);border-radius:8px;padding:8px;"><div style="font-size:10px;color:var(--text-muted);">Deposited</div><div style="font-size:14px;font-weight:700;">&#8377;62,000</div></div>
-          <div style="background:rgba(16,185,129,0.1);border-radius:8px;padding:8px;"><div style="font-size:10px;color:var(--text-muted);">Earned</div><div style="font-size:14px;font-weight:700;color:#10b981;">&#8377;4,742</div></div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-primary" style="flex:1;padding:8px;font-size:12px;"><i class="fas fa-plus"></i> Deposit</button>
-          <button class="btn-secondary" style="flex:1;padding:8px;font-size:12px;"><i class="fas fa-minus"></i> Withdraw</button>
-        </div>
-      </div>
+      <!-- DeFi Positions — dynamically rendered by JS -->
+      <div id="defiPositionsList"></div>
 
-      <!-- Staking -->
-      <div style="font-size:16px;font-weight:700;">Staking Positions</div>
-      <div class="card" style="padding:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:40px;height:40px;border-radius:50%;background:#627EEA22;border:2px solid #627EEA;display:flex;align-items:center;justify-content:center;font-weight:700;color:#627EEA;">&#926;</div>
-            <div><div style="font-size:14px;font-weight:700;">ETH <span class="badge badge-green" style="font-size:10px;">Active</span></div><div style="font-size:11px;color:var(--text-muted);">Lido stETH</div></div>
-          </div>
-          <div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:#10b981;">3.8% APY</div><div style="font-size:10px;color:var(--text-muted);">145 days</div></div>
-        </div>
-        <div class="grid-2" style="gap:8px;margin-bottom:10px;">
-          <div style="font-size:12px;background:var(--bg-card2);padding:8px;border-radius:8px;">Staked: <strong>2.5 ETH</strong></div>
-          <div style="font-size:12px;background:rgba(16,185,129,0.1);padding:8px;border-radius:8px;">Rewards: <strong style="color:#10b981;">0.085 ETH</strong></div>
-        </div>
-        <button class="btn-primary" style="width:100%;padding:8px;font-size:12px;" onclick="showToast('Rewards claimed! 0.085 ETH 🎉','success')"><i class="fas fa-hand-holding-usd"></i> Claim Rewards</button>
-      </div>
-      <div class="card" style="padding:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:40px;height:40px;border-radius:50%;background:#9945FF22;border:2px solid #9945FF;display:flex;align-items:center;justify-content:center;font-weight:700;color:#9945FF;">S</div>
-            <div><div style="font-size:14px;font-weight:700;">SOL <span class="badge badge-green" style="font-size:10px;">Active</span></div><div style="font-size:11px;color:var(--text-muted);">Marinade mSOL</div></div>
-          </div>
-          <div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:#10b981;">6.5% APY</div><div style="font-size:10px;color:var(--text-muted);">89 days</div></div>
-        </div>
-        <div class="grid-2" style="gap:8px;margin-bottom:10px;">
-          <div style="font-size:12px;background:var(--bg-card2);padding:8px;border-radius:8px;">Staked: <strong>45 SOL</strong></div>
-          <div style="font-size:12px;background:rgba(16,185,129,0.1);padding:8px;border-radius:8px;">Rewards: <strong style="color:#10b981;">1.2 SOL</strong></div>
-        </div>
-        <button class="btn-primary" style="width:100%;padding:8px;font-size:12px;" onclick="showToast('Rewards claimed! 1.2 SOL 🎉','success')"><i class="fas fa-hand-holding-usd"></i> Claim Rewards</button>
+      <!-- Staking section — dynamically rendered by JS -->
+      <div id="stakingSection">
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Staking Positions</div>
+        <div id="stakingPositionsList"></div>
       </div>
     </div>
   </div>
@@ -760,19 +693,19 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
       <div class="grid-2" style="gap:14px;">
         <div class="card" style="padding:0;overflow:hidden;cursor:pointer;" onclick="openModal('nftDetailModal')">
           <div style="height:160px;background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.05));display:flex;align-items:center;justify-content:center;font-size:70px;position:relative;">👾<span class="badge" style="position:absolute;top:8px;right:8px;background:rgba(245,158,11,0.2);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-size:9px;">Legendary</span></div>
-          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">CryptoPunk #3421</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">CryptoPunks</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">85 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;22.8L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();showToast('NFT listed on OpenSea! 🎉','success')">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;">Transfer</button></div></div>
+          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">CryptoPunk #3421</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">CryptoPunks</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">85 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;22.8L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();listNFT('CryptoPunk #3421')">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();transferNFT('CryptoPunk #3421')">Transfer</button></div></div>
         </div>
         <div class="card" style="padding:0;overflow:hidden;cursor:pointer;" onclick="openModal('nftDetailModal')">
           <div style="height:160px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(139,92,246,0.05));display:flex;align-items:center;justify-content:center;font-size:70px;position:relative;">🦍<span class="badge" style="position:absolute;top:8px;right:8px;background:rgba(139,92,246,0.2);color:#8b5cf6;border:1px solid rgba(139,92,246,0.4);font-size:9px;">Epic</span></div>
-          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">Bored Ape #7823</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">BAYC</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">42 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;11.3L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();showToast('NFT listed! 🎉','success')">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;">Transfer</button></div></div>
+          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">Bored Ape #7823</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">BAYC</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">42 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;11.3L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();listNFT('Bored Ape #7823')">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();transferNFT('Bored Ape #7823')">Transfer</button></div></div>
         </div>
         <div class="card" style="padding:0;overflow:hidden;cursor:pointer;" onclick="openModal('nftDetailModal')">
           <div style="height:160px;background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.05));display:flex;align-items:center;justify-content:center;font-size:70px;position:relative;">🌸<span class="badge" style="position:absolute;top:8px;right:8px;background:rgba(6,182,212,0.2);color:#06b6d4;border:1px solid rgba(6,182,212,0.4);font-size:9px;">Rare</span></div>
-          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">Azuki #1204</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">Azuki</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">12 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;3.2L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();showToast('NFT listed! 🎉','success')">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;">Transfer</button></div></div>
+          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">Azuki #1204</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">Azuki</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">12 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;3.2L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();listNFT('Azuki #1204')">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();transferNFT('Azuki #1204')">Transfer</button></div></div>
         </div>
         <div class="card" style="padding:0;overflow:hidden;cursor:pointer;" onclick="openModal('nftDetailModal')">
           <div style="height:160px;background:linear-gradient(135deg,rgba(100,116,139,0.2),rgba(100,116,139,0.05));display:flex;align-items:center;justify-content:center;font-size:70px;">🎨</div>
-          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">Doodle #5621</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">Doodles</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">5 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;1.3L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;">Transfer</button></div></div>
+          <div style="padding:12px;"><div style="font-size:13px;font-weight:700;margin-bottom:2px;">Doodle #5621</div><div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">Doodles</div><div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:#8b5cf6;font-weight:600;">5 ETH</span><span style="font-size:11px;color:var(--text-muted);">&#8377;1.3L</span></div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn-primary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();listNFT('Doodle #5621')">List</button><button class="btn-secondary" style="flex:1;padding:6px;font-size:11px;" onclick="event.stopPropagation();transferNFT('Doodle #5621')">Transfer</button></div></div>
         </div>
       </div>
     </div>
@@ -881,33 +814,37 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
     </div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
       <div class="card" style="padding:16px;display:flex;align-items:center;gap:14px;">
-        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:28px;">🧑</div>
-        <div style="flex:1;"><div style="font-size:17px;font-weight:700;">Arjun Kumar</div><div style="font-size:12px;color:var(--text-muted);">arjun.kumar@gmail.com</div><div style="font-size:11px;color:#10b981;margin-top:2px;"><i class="fas fa-check-circle"></i> KYC Level 3 Verified</div></div>
-        <button class="btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="showToast('Profile edit opened ✓','info')">Edit</button>
+        <div id="profileAvatar" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:28px;">🧑</div>
+        <div style="flex:1;">
+          <div id="profileName" style="font-size:17px;font-weight:700;">Arjun Kumar</div>
+          <div id="profileEmail" style="font-size:12px;color:var(--text-muted);">arjun.kumar@gmail.com</div>
+          <div id="profileKYC" style="font-size:11px;color:#10b981;margin-top:2px;"><i class="fas fa-check-circle"></i> KYC Level 3 Verified</div>
+        </div>
+        <button class="btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="openEditProfile()"><i class="fas fa-edit"></i> Edit</button>
       </div>
 
       <div class="card" style="padding:16px;">
         <div style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-globe" style="color:#6366f1;"></i> Language</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <button class="chip active" onclick="setLanguage('en',this)">&#127482;&#127480; English</button>
-          <button class="chip" onclick="setLanguage('hi',this)">&#127470;&#127475; हिंदी</button>
-          <button class="chip" onclick="setLanguage('bn',this)">&#127470;&#127475; বাংলা</button>
-          <button class="chip" onclick="setLanguage('te',this)">&#127470;&#127475; తెలుగు</button>
-          <button class="chip" onclick="setLanguage('ta',this)">&#127470;&#127475; தமிழ்</button>
-          <button class="chip" onclick="setLanguage('mr',this)">&#127470;&#127475; मराठी</button>
-          <button class="chip" onclick="setLanguage('gu',this)">&#127470;&#127475; ગુજરાતી</button>
-          <button class="chip" onclick="setLanguage('kn',this)">&#127470;&#127475; ಕನ್ನಡ</button>
+          <button class="chip lang-chip active" onclick="setLanguage('en',this)">&#127482;&#127480; English</button>
+          <button class="chip lang-chip" onclick="setLanguage('hi',this)">&#127470;&#127475; हिंदी</button>
+          <button class="chip lang-chip" onclick="setLanguage('bn',this)">&#127470;&#127475; বাংলা</button>
+          <button class="chip lang-chip" onclick="setLanguage('te',this)">&#127470;&#127475; తెలుగు</button>
+          <button class="chip lang-chip" onclick="setLanguage('ta',this)">&#127470;&#127475; தமிழ்</button>
+          <button class="chip lang-chip" onclick="setLanguage('mr',this)">&#127470;&#127475; मराठी</button>
+          <button class="chip lang-chip" onclick="setLanguage('gu',this)">&#127470;&#127475; ગુજરાતી</button>
+          <button class="chip lang-chip" onclick="setLanguage('kn',this)">&#127470;&#127475; ಕನ್ನಡ</button>
         </div>
       </div>
 
       <div class="card" style="padding:16px;">
         <div style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-coins" style="color:#f59e0b;"></i> Display Currency</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <button class="chip active" onclick="setCurrency('INR',this)">&#8377; INR</button>
-          <button class="chip" onclick="setCurrency('USD',this)">$ USD</button>
-          <button class="chip" onclick="setCurrency('EUR',this)">&#8364; EUR</button>
-          <button class="chip" onclick="setCurrency('GBP',this)">&#163; GBP</button>
-          <button class="chip" onclick="setCurrency('JPY',this)">&#165; JPY</button>
+          <button class="chip curr-chip active" onclick="setCurrency('INR',this)">&#8377; INR</button>
+          <button class="chip curr-chip" onclick="setCurrency('USD',this)">$ USD</button>
+          <button class="chip curr-chip" onclick="setCurrency('EUR',this)">&#8364; EUR</button>
+          <button class="chip curr-chip" onclick="setCurrency('GBP',this)">&#163; GBP</button>
+          <button class="chip curr-chip" onclick="setCurrency('JPY',this)">&#165; JPY</button>
         </div>
       </div>
 
@@ -941,7 +878,7 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
   <div id="page-activity" class="page">
     <div class="header">
       <div class="grad-text" style="font-size:20px;font-weight:800;">Activity</div>
-      <button class="btn-secondary" style="padding:8px 14px;font-size:12px;" onclick="showToast('Exporting transaction history... ✓','success')"><i class="fas fa-download"></i> Export</button>
+      <button class="btn-secondary" style="padding:8px 14px;font-size:12px;" onclick="exportTransactions()"><i class="fas fa-download"></i> Export</button>
     </div>
     <div style="padding:16px 20px;">
       <div id="allTransactions" class="card" style="padding:8px;"></div>
@@ -1069,15 +1006,18 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
 <div id="billModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'billModal')">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-file-invoice-dollar" style="color:#f59e0b;"></i> Pay Bill</h3>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;"><i class="fas fa-file-invoice-dollar" style="color:#f59e0b;"></i> Pay Bill</h3>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Category: <span id="billCategory" style="color:#f59e0b;font-weight:600;">Electricity</span></div>
     <div style="display:flex;flex-direction:column;gap:12px;">
-      <input class="input-field" placeholder="Consumer / Account Number" />
-      <input class="input-field" placeholder="Bill Amount (&#8377;)" type="number" />
+      <input id="billAcc" class="input-field" placeholder="Consumer / Account Number" />
+      <input id="billAmt" class="input-field" placeholder="Bill Amount (&#8377;)" type="number" />
       <div style="background:var(--bg-card2);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;font-size:12px;">
-        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Consumer</span><span>Arjun Kumar</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Consumer</span><span id="billConsumerName">Arjun Kumar</span></div>
         <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Due Date</span><span style="color:#ef4444;">3 days remaining</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Payment via</span><span>UPI / Wallet</span></div>
       </div>
       <button class="btn-primary" style="width:100%;padding:14px;" onclick="payBill()"><i class="fas fa-check"></i> Pay Bill</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('billModal')">Cancel</button>
     </div>
   </div>
 </div>
@@ -1141,7 +1081,502 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
   </div>
 </div>
 
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'editProfileModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-user-edit" style="color:#6366f1;"></i> Edit Profile</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="text-align:center;margin-bottom:8px;">
+        <div id="editAvatarPreview" onclick="changeAvatar()" style="font-size:56px;cursor:pointer;display:inline-block;filter:drop-shadow(0 0 12px rgba(99,102,241,0.5));">🧑</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Tap to change avatar</div>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Full Name</label>
+        <input id="editName" class="input-field" placeholder="Full Name" />
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Email</label>
+        <input id="editEmail" class="input-field" placeholder="Email Address" type="email" />
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Phone Number</label>
+        <input id="editPhone" class="input-field" placeholder="+91 XXXXX XXXXX" />
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Date of Birth</label>
+        <input id="editDob" class="input-field" type="date" />
+      </div>
+      <div style="background:rgba(99,102,241,0.05);border-radius:10px;padding:12px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:var(--text-muted);">PAN Card</span><span id="editPanDisplay" style="font-weight:600;"></span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">KYC Level</span><span class="badge badge-green" style="font-size:10px;"></span></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-secondary" style="flex:1;" onclick="closeModal('editProfileModal')">Cancel</button>
+        <button class="btn-primary" style="flex:1;" onclick="saveProfile()"><i class="fas fa-save"></i> Save Profile</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Deposit Modal -->
+<div id="depositModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'depositModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-arrow-circle-down" style="color:#10b981;"></i> Deposit Funds</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="tab-bar" id="depositTabBar">
+        <button class="tab-item active" onclick="switchDepositMethod('upi',this)">UPI</button>
+        <button class="tab-item" onclick="switchDepositMethod('bank',this)">Bank Transfer</button>
+        <button class="tab-item" onclick="switchDepositMethod('card',this)">Card</button>
+      </div>
+      <div id="depositUPI">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Your UPI Receive ID</div>
+        <div style="background:var(--bg-card2);border-radius:10px;padding:12px;font-family:monospace;font-size:14px;font-weight:700;color:#6366f1;margin-bottom:12px;">arjun.kumar@ybl</div>
+        <input id="depositUPIAmt" class="input-field" placeholder="Amount to deposit (&#8377;)" type="number" />
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+          <button class="chip" onclick="setDepositAmt(1000)">&#8377;1,000</button>
+          <button class="chip" onclick="setDepositAmt(5000)">&#8377;5,000</button>
+          <button class="chip" onclick="setDepositAmt(10000)">&#8377;10,000</button>
+          <button class="chip" onclick="setDepositAmt(25000)">&#8377;25,000</button>
+        </div>
+      </div>
+      <div id="depositBank" style="display:none;">
+        <select id="depositBankSel" class="input-field" style="margin-bottom:8px;">
+          <option>SBI — State Bank of India</option>
+          <option>HDFC Bank</option>
+          <option>ICICI Bank</option>
+          <option>Axis Bank</option>
+          <option>Kotak Mahindra Bank</option>
+          <option>Punjab National Bank</option>
+        </select>
+        <input id="depositBankAmt" class="input-field" placeholder="Amount (&#8377;)" type="number" />
+        <div style="background:var(--bg-card2);border-radius:10px;padding:12px;margin-top:8px;font-size:12px;">
+          <div style="font-weight:600;margin-bottom:6px;">NexWallet Bank Details</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Account Name</span><span>NexWallet Pvt Ltd</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Account No.</span><span style="font-family:monospace;">0421 0012 3456 789</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">IFSC Code</span><span style="font-family:monospace;">HDFC0001234</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Transfer Type</span><span>NEFT / RTGS / IMPS</span></div>
+        </div>
+      </div>
+      <div id="depositCard" style="display:none;">
+        <input id="depositCardNum" class="input-field" placeholder="Card Number" maxlength="19" oninput="formatCardNum(this)" style="margin-bottom:8px;" />
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input id="depositCardExp" class="input-field" placeholder="MM/YY" maxlength="5" style="flex:1;" />
+          <input id="depositCardCVV" class="input-field" placeholder="CVV" maxlength="3" type="password" style="flex:1;" />
+        </div>
+        <input id="depositCardAmt" class="input-field" placeholder="Amount (&#8377;)" type="number" />
+      </div>
+      <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:10px;font-size:12px;">
+        <i class="fas fa-shield-alt" style="color:#10b981;"></i> 256-bit SSL encrypted · RBI compliant · Instant credit
+      </div>
+      <button class="btn-green" style="width:100%;padding:14px;" onclick="processDeposit()"><i class="fas fa-arrow-circle-down"></i> Deposit Now</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('depositModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div id="withdrawModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'withdrawModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-arrow-circle-up" style="color:#f59e0b;"></i> Withdraw Funds</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="tab-bar" id="withdrawTabBar">
+        <button class="tab-item active" onclick="switchWithdrawMethod('upi',this)">UPI</button>
+        <button class="tab-item" onclick="switchWithdrawMethod('bank',this)">Bank Transfer</button>
+        <button class="tab-item" onclick="switchWithdrawMethod('crypto',this)">Crypto</button>
+      </div>
+      <div id="withdrawUPI">
+        <input id="withdrawUPIId" class="input-field" placeholder="UPI ID (name@bank)" style="margin-bottom:8px;" />
+        <input id="withdrawUPIAmt" class="input-field" placeholder="Amount to withdraw (&#8377;)" type="number" />
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+          <button class="chip" onclick="setWithdrawAmt('upi',500)">&#8377;500</button>
+          <button class="chip" onclick="setWithdrawAmt('upi',1000)">&#8377;1,000</button>
+          <button class="chip" onclick="setWithdrawAmt('upi',5000)">&#8377;5,000</button>
+          <button class="chip" onclick="setWithdrawAmt('upi',10000)">&#8377;10,000</button>
+        </div>
+      </div>
+      <div id="withdrawBank" style="display:none;">
+        <select id="withdrawBankSel" class="input-field" style="margin-bottom:8px;">
+          <option>SBI — State Bank of India (✓ Linked)</option>
+          <option>HDFC Bank (✓ Linked)</option>
+          <option>ICICI Bank (✓ Linked)</option>
+          <option>Axis Bank (✓ Linked)</option>
+        </select>
+        <input id="withdrawBankAmt" class="input-field" placeholder="Amount (&#8377;)" type="number" />
+        <div style="background:var(--bg-card2);border-radius:10px;padding:10px;margin-top:8px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Processing Time</span><span>NEFT: 2hrs · IMPS: Instant</span></div>
+        </div>
+      </div>
+      <div id="withdrawCrypto" style="display:none;">
+        <select id="withdrawCryptoToken" class="input-field" style="margin-bottom:8px;">
+          <option>BTC</option><option>ETH</option><option>USDT</option><option>SOL</option><option>BNB</option>
+        </select>
+        <input id="withdrawCryptoAddr" class="input-field" placeholder="Destination wallet address" style="margin-bottom:8px;" />
+        <input id="withdrawCryptoAmt" class="input-field" placeholder="Amount" type="number" />
+      </div>
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px;font-size:12px;">
+        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Always verify details. Withdrawals above &#8377;50,000 require 2-of-3 multi-sig.
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="processWithdraw()"><i class="fas fa-arrow-circle-up"></i> Withdraw Now</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('withdrawModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Card Payment Modal -->
+<div id="cardPayModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'cardPayModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-credit-card" style="color:#6366f1;"></i> Card Payment</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div id="selectedCardDisplay" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;padding:20px;color:white;">
+        <div style="font-size:10px;opacity:0.8;margin-bottom:8px;">SELECTED CARD</div>
+        <div id="cardPayNumber" style="font-size:16px;font-weight:700;letter-spacing:2px;font-family:monospace;margin-bottom:8px;">•••• •••• •••• 4523</div>
+        <div style="display:flex;justify-content:space-between;"><span id="cardPayHolder" style="font-size:13px;">ARJUN KUMAR</span><span id="cardPayExpiry" style="font-size:13px;">12/27</span></div>
+      </div>
+      <input id="cardPayRecipient" class="input-field" placeholder="Merchant / Recipient name" />
+      <input id="cardPayAmt" class="input-field" placeholder="Amount (&#8377;)" type="number" />
+      <input id="cardPayNote" class="input-field" placeholder="Description / Note" />
+      <div style="background:var(--bg-card2);border-radius:10px;padding:12px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Rewards Earned</span><span style="color:#10b981;">+1% cashback</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Processing Fee</span><span>₹0 (Free)</span></div>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="processCardPay()"><i class="fas fa-lock"></i> Pay Securely</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('cardPayModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Net Banking Modal -->
+<div id="netBankModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'netBankModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-university" style="color:#22409A;"></i> Net Banking Transfer</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="tab-bar">
+        <button class="tab-item active" onclick="switchNetBankTab('neft',this)">NEFT</button>
+        <button class="tab-item" onclick="switchNetBankTab('rtgs',this)">RTGS</button>
+        <button class="tab-item" onclick="switchNetBankTab('imps',this)">IMPS</button>
+      </div>
+      <select id="netBankSel" class="input-field">
+        <option>SBI — State Bank of India</option>
+        <option>HDFC Bank</option>
+        <option>ICICI Bank</option>
+        <option>Axis Bank</option>
+        <option>Kotak Mahindra</option>
+        <option>Punjab National Bank</option>
+        <option>Bank of Baroda</option>
+        <option>Canara Bank</option>
+      </select>
+      <input id="netBankAccNum" class="input-field" placeholder="Beneficiary Account Number" />
+      <input id="netBankIFSC" class="input-field" placeholder="IFSC Code" />
+      <input id="netBankName" class="input-field" placeholder="Account Holder Name" />
+      <input id="netBankAmt" class="input-field" placeholder="Amount (&#8377;)" type="number" />
+      <input id="netBankNote" class="input-field" placeholder="Remarks / Purpose" />
+      <div id="netBankInfo" style="background:var(--bg-card2);border-radius:10px;padding:10px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Transfer Type</span><span id="netBankType" style="color:#6366f1;font-weight:600;">NEFT</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Processing Time</span><span id="netBankTime">2-4 hours</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Min / Max Amount</span><span id="netBankLimits">&#8377;1 / &#8377;10L</span></div>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="processNetBanking()"><i class="fas fa-paper-plane"></i> Transfer Now</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('netBankModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Processing Modal -->
+<div id="processingModal" class="modal-overlay">
+  <div class="modal-sheet" style="border-radius:24px;max-width:340px;margin:0 auto 80px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;animation:glow 2s ease-in-out infinite;">
+        <i class="fas fa-spinner" style="color:white;font-size:20px;animation:spin 0.8s linear infinite;"></i>
+      </div>
+      <div style="font-size:16px;font-weight:700;">Processing Transaction</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Sub-2 second execution</div>
+    </div>
+    <div id="processingSteps" style="display:flex;flex-direction:column;gap:4px;"></div>
+  </div>
+</div>
+
+<!-- Confirm Dialog Modal -->
+<div id="confirmModal" class="modal-overlay">
+  <div class="modal-sheet" style="border-radius:24px;max-width:340px;margin:0 auto 80px;">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;"><i class="fas fa-question-circle" style="color:#6366f1;font-size:24px;"></i></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Confirm Action</div>
+      <div id="confirmMessage" style="font-size:14px;color:var(--text-muted);line-height:1.5;"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-secondary" style="flex:1;" onclick="doCancel()">Cancel</button>
+      <button class="btn-primary" style="flex:1;" onclick="doConfirm()"><i class="fas fa-check"></i> Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trade Modal -->
+<div id="tradeModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'tradeModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div id="tradeLogo" style="width:48px;height:48px;border-radius:50%;background:#62EEA22;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">₿</div>
+      <div>
+        <div id="tradeSymbol" style="font-size:18px;font-weight:800;">BTC</div>
+        <div id="tradePrice" style="font-size:14px;color:var(--text-muted);">₹68,42,350</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;"><div style="font-size:12px;color:var(--text-muted);">Balance</div><div id="tradeBalance" style="font-size:13px;font-weight:600;">0.0421 BTC</div></div>
+    </div>
+    <div id="tradeModeBar" class="tab-bar" style="margin-bottom:12px;">
+      <button class="tab-item active" data-mode="buy" onclick="setTradeMode('buy',this)" style="color:#10b981;">Buy</button>
+      <button class="tab-item" data-mode="sell" onclick="setTradeMode('sell',this)" style="">Sell</button>
+      <button class="tab-item" data-mode="convert" onclick="setTradeMode('convert',this)">Convert</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label id="tradeAmtLabel" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Amount (&#8377; INR)</label>
+        <input id="tradeAmtInput" class="input-field" placeholder="Enter ₹ amount" type="number" oninput="calcTradeValue()" />
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button class="chip" onclick="tradeQuick(25)">25%</button>
+        <button class="chip" onclick="tradeQuick(50)">50%</button>
+        <button class="chip" onclick="tradeQuick(75)">75%</button>
+        <button class="chip" onclick="tradeQuick(100)">Max</button>
+      </div>
+      <div style="background:var(--bg-card2);border-radius:10px;padding:12px;font-size:13px;font-weight:600;color:#10b981;" id="tradeInrValue">≈ ₹0</div>
+      <div style="background:var(--bg-card2);border-radius:10px;padding:10px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Slippage</span><span>0.5%</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Fee</span><span>0.1%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Route</span><span style="color:#6366f1;">Best Price ✓</span></div>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="executeTrade()"><i class="fas fa-exchange-alt"></i> Execute Trade</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('tradeModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Token Detail Modal -->
+<div id="tokenDetailModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'tokenDetailModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div id="tdLogo" style="width:56px;height:56px;border-radius:50%;background:#62EEA22;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;">₿</div>
+      <div>
+        <div id="tdSymbol" style="font-size:20px;font-weight:800;">BTC</div>
+        <div id="tdName" style="font-size:13px;color:var(--text-muted);">Bitcoin</div>
+        <span id="tdChain" class="chain-badge"></span>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div id="tdPrice" style="font-size:18px;font-weight:700;">₹68,42,350</div>
+        <div id="tdChange" style="font-size:13px;color:#10b981;">+2.34%</div>
+      </div>
+    </div>
+    <div class="grid-2" style="gap:10px;margin-bottom:16px;">
+      <div style="background:var(--bg-card2);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">Your Balance</div><div id="tdBalance" style="font-size:15px;font-weight:700;">0.0421 BTC</div></div>
+      <div style="background:var(--bg-card2);border-radius:12px;padding:12px;text-align:center;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">Value</div><div id="tdValue" style="font-size:15px;font-weight:700;color:#10b981;">₹2,87,943</div></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-primary" style="flex:1;" onclick="closeModal('tokenDetailModal');openModal('sendModal')"><i class="fas fa-paper-plane"></i> Send</button>
+      <button class="btn-green" style="flex:1;" onclick="closeModal('tokenDetailModal');openModal('receiveModal')"><i class="fas fa-qrcode"></i> Receive</button>
+      <button class="btn-secondary" style="flex:1;" onclick="closeModal('tokenDetailModal');openTradeModal(STATE.selectedToken)"><i class="fas fa-exchange-alt"></i> Trade</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div id="txDetailModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'txDetailModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 id="txDetailTitle" style="font-size:16px;font-weight:700;margin-bottom:16px;">Transaction Details</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="text-align:center;margin-bottom:8px;">
+        <div id="txDetailAmount" style="font-size:28px;font-weight:800;color:#10b981;">+0.0025 BTC</div>
+        <div id="txDetailValue" style="font-size:14px;color:var(--text-muted);">₹17,106</div>
+      </div>
+      <div style="background:var(--bg-card2);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Status</span><span id="txDetailStatus" class="badge badge-green">completed</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Time</span><span id="txDetailTime">2 min ago</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Details</span><span id="txDetailNote" style="text-align:right;max-width:60%;">—</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:var(--text-muted);">Tx Hash</span><div style="display:flex;align-items:center;gap:6px;"><span id="txDetailHash" style="font-family:monospace;font-size:11px;">0x...</span><button onclick="copyTxHash()" style="background:none;border:none;color:#6366f1;cursor:pointer;font-size:12px;"><i class="fas fa-copy"></i></button></div></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" style="flex:1;" onclick="viewOnExplorer()"><i class="fas fa-external-link-alt"></i> Explorer</button>
+        <button class="btn-secondary" style="flex:1;" onclick="closeModal('txDetailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DeFi Action Modal -->
+<div id="defiActionModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'defiActionModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 id="defiModalTitle" style="font-size:18px;font-weight:700;margin-bottom:4px;">Deposit to Aave V3</h3>
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+      <span id="defiModalAPY" class="badge badge-green">8.42% APY</span>
+      <span id="defiModalToken" style="font-size:12px;color:var(--text-muted);">USDC</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="defiAmtInput" class="input-field" placeholder="Amount" type="number" />
+      <div id="defiModalNote" style="background:var(--bg-card2);border-radius:10px;padding:10px;font-size:12px;color:var(--text-muted);"></div>
+      <div style="background:rgba(99,102,241,0.05);border-radius:10px;padding:10px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Gas Fee</span><span>~$2.50</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Network</span><span>Ethereum</span></div>
+      </div>
+      <button id="defiConfirmBtn" class="btn-primary" style="width:100%;padding:14px;" onclick="confirmDefiAction()">Deposit</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('defiActionModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Staking Action Modal -->
+<div id="stakeActionModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'stakeActionModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 id="stakeModalTitle" style="font-size:18px;font-weight:700;margin-bottom:4px;">Stake ETH</h3>
+    <div style="margin-bottom:16px;"><span id="stakeModalAPY" style="font-size:12px;color:var(--text-muted);">3.8% APY · Lido stETH</span></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div id="stakeModalBalance" style="font-size:12px;color:var(--text-muted);padding:10px;background:var(--bg-card2);border-radius:10px;">Available: 0.845 ETH</div>
+      <input id="stakeAmtInput" class="input-field" placeholder="Amount to stake" type="number" />
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button class="chip" onclick="stakeQuick(25)">25%</button>
+        <button class="chip" onclick="stakeQuick(50)">50%</button>
+        <button class="chip" onclick="stakeQuick(100)">Max</button>
+      </div>
+      <div style="background:rgba(99,102,241,0.05);border-radius:10px;padding:10px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--text-muted);">Estimated Rewards/yr</span><span style="color:#10b981;" id="stakeEstReward">—</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Unbonding Period</span><span>Varies by protocol</span></div>
+      </div>
+      <button id="stakeConfirmBtn" class="btn-primary" style="width:100%;padding:14px;" onclick="confirmStakeAction()">Stake</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('stakeActionModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- NFT Transfer Modal -->
+<div id="nftTransferModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'nftTransferModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;"><i class="fas fa-paper-plane" style="color:#ec4899;"></i> Transfer NFT</h3>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Transferring: <span id="nftTransferName" style="color:var(--text);font-weight:600;">CryptoPunk #3421</span></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="nftTransferAddr" class="input-field" placeholder="Recipient wallet address (0x...)" />
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px;font-size:12px;color:#ef4444;">
+        <i class="fas fa-exclamation-triangle"></i> NFT transfers are irreversible. Double-check the address.
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="confirmNFTTransfer()"><i class="fas fa-paper-plane"></i> Transfer NFT</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('nftTransferModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Guardian Modal -->
+<div id="addGuardianModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'addGuardianModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-user-plus" style="color:#8b5cf6;"></i> Add Guardian</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="guardianName" class="input-field" placeholder="Guardian's Full Name" />
+      <input id="guardianEmail" class="input-field" placeholder="Guardian's Email Address" type="email" />
+      <input class="input-field" placeholder="Relationship (e.g., Sister, Friend)" />
+      <div style="background:rgba(139,92,246,0.05);border-radius:10px;padding:10px;font-size:12px;color:var(--text-muted);">
+        Guardian will receive an invitation email. They need to accept to be added to your social recovery.
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="confirmAddGuardian()"><i class="fas fa-user-plus"></i> Send Invitation</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('addGuardianModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Link Bank Modal -->
+<div id="linkBankModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'linkBankModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-university" style="color:#22409A;"></i> Link Bank Account</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <select id="newBankSelect" class="input-field">
+        <option>State Bank of India</option>
+        <option>HDFC Bank</option>
+        <option>ICICI Bank</option>
+        <option>Axis Bank</option>
+        <option>Kotak Mahindra Bank</option>
+        <option>Punjab National Bank</option>
+        <option>Bank of Baroda</option>
+        <option>Canara Bank</option>
+        <option>Union Bank of India</option>
+        <option>Indian Bank</option>
+      </select>
+      <input id="newAccNumber" class="input-field" placeholder="Account Number" />
+      <input id="newIFSC" class="input-field" placeholder="IFSC Code" />
+      <input class="input-field" placeholder="Account Holder Name" />
+      <div style="background:rgba(16,185,129,0.05);border-radius:10px;padding:10px;font-size:12px;color:var(--text-muted);">
+        <i class="fas fa-info-circle" style="color:#10b981;"></i> A small penny drop of &#8377;1 will be sent and refunded to verify your account.
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="confirmLinkBank()"><i class="fas fa-link"></i> Link Account</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('linkBankModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPI QR Modal -->
+<div id="upiQRModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'upiQRModal')">
+  <div class="modal-sheet" style="text-align:center;">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-qrcode" style="color:#06b6d4;"></i> UPI QR Code</h3>
+    <div style="background:white;padding:20px;border-radius:16px;display:inline-block;margin-bottom:16px;">
+      <svg width="180" height="180" viewBox="0 0 37 37">
+        <rect width="37" height="37" fill="white"/>
+        <rect x="0" y="0" width="7" height="7" fill="black"/><rect x="1" y="1" width="5" height="5" fill="white"/><rect x="2" y="2" width="3" height="3" fill="black"/>
+        <rect x="0" y="30" width="7" height="7" fill="black"/><rect x="1" y="31" width="5" height="5" fill="white"/><rect x="2" y="32" width="3" height="3" fill="black"/>
+        <rect x="30" y="0" width="7" height="7" fill="black"/><rect x="31" y="1" width="5" height="5" fill="white"/><rect x="32" y="2" width="3" height="3" fill="black"/>
+        <rect x="9" y="0" fill="black" width="1" height="1"/><rect x="11" y="0" fill="black" width="1" height="1"/><rect x="14" y="0" fill="black" width="1" height="1"/>
+        <rect x="10" y="1" fill="black" width="1" height="1"/><rect x="13" y="1" fill="black" width="1" height="1"/><rect x="15" y="1" fill="black" width="1" height="1"/>
+        <rect x="9" y="2" fill="black" width="1" height="1"/><rect x="12" y="2" fill="black" width="1" height="1"/><rect x="16" y="2" fill="black" width="1" height="1"/>
+        <rect x="10" y="3" fill="black" width="1" height="1"/><rect x="14" y="3" fill="black" width="1" height="1"/>
+        <rect x="9" y="4" fill="black" width="1" height="1"/><rect x="11" y="4" fill="black" width="1" height="1"/><rect x="15" y="4" fill="black" width="1" height="1"/>
+        <rect x="13" y="5" fill="black" width="1" height="1"/><rect x="9" y="6" fill="black" width="1" height="1"/><rect x="16" y="6" fill="black" width="1" height="1"/>
+        <rect x="0" y="9" fill="black" width="1" height="1"/><rect x="3" y="9" fill="black" width="1" height="1"/><rect x="5" y="9" fill="black" width="1" height="1"/>
+        <rect x="1" y="10" fill="black" width="1" height="1"/><rect x="4" y="10" fill="black" width="1" height="1"/>
+        <rect x="2" y="11" fill="black" width="1" height="1"/><rect x="6" y="11" fill="black" width="1" height="1"/>
+        <rect x="0" y="12" fill="black" width="1" height="1"/><rect x="3" y="13" fill="black" width="1" height="1"/>
+        <rect x="18" y="9" fill="black" width="1" height="1"/><rect x="21" y="9" fill="black" width="1" height="1"/>
+        <rect x="20" y="10" fill="black" width="1" height="1"/><rect x="22" y="11" fill="black" width="1" height="1"/>
+        <rect x="19" y="12" fill="black" width="1" height="1"/><rect x="21" y="13" fill="black" width="1" height="1"/>
+      </svg>
+    </div>
+    <div style="font-size:15px;font-weight:700;color:#6366f1;margin-bottom:4px;">arjun.kumar@ybl</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Scan with any UPI app to pay</div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn-primary" onclick="showToast('QR code downloaded! ✓','success')"><i class="fas fa-download"></i> Download QR</button>
+      <button class="btn-secondary" onclick="showToast('QR code shared! ✓','info')"><i class="fas fa-share-alt"></i> Share</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPI Pay Modal -->
+<div id="upiPayModal" class="modal-overlay" onclick="closeModalOnOverlay(event,'upiPayModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;"><i class="fas fa-at" style="color:#06b6d4;"></i> Quick UPI Pay</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="upiModalId" class="input-field" placeholder="UPI ID (name@bank)" />
+      <input id="upiModalAmt" class="input-field" placeholder="Amount (&#8377;)" type="number" />
+      <input id="upiModalNote" class="input-field" placeholder="Note (optional)" />
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button class="chip" onclick="document.getElementById('upiModalAmt').value=100">&#8377;100</button>
+        <button class="chip" onclick="document.getElementById('upiModalAmt').value=500">&#8377;500</button>
+        <button class="chip" onclick="document.getElementById('upiModalAmt').value=1000">&#8377;1,000</button>
+        <button class="chip" onclick="document.getElementById('upiModalAmt').value=5000">&#8377;5,000</button>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="processUPIModal()"><i class="fas fa-paper-plane"></i> Pay Now</button>
+      <button class="btn-secondary" style="width:100%;" onclick="closeModal('upiPayModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <style>
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 .pin-key{background:var(--bg-card);border:1px solid var(--border);border-radius:50%;width:64px;height:64px;color:var(--text);font-size:20px;font-weight:600;cursor:pointer;transition:all 0.2s;margin:auto;display:flex;align-items:center;justify-content:center;}
 .pin-key:hover{background:var(--bg-card2);}
 .mr-1{margin-right:4px;}

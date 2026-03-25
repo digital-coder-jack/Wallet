@@ -152,9 +152,183 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
 #lockScreen{position:fixed;inset:0;z-index:500;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;}
 
 @media(max-width:380px){.grid-4{grid-template-columns:repeat(3,1fr);}.nav-item span{display:none;}}
+
+/* Registration Screen */
+#regScreen{font-family:'Inter',system-ui,sans-serif;}
+.reg-step{animation:fadeIn 0.4s ease;}
+.reg-avatar.selected{border-color:#6366f1!important;background:rgba(99,102,241,0.15);}
+.reg-avatar:hover{background:rgba(99,102,241,0.1);}
+.reg-pin-dot.filled{background:#6366f1;}
 </style>
 </head>
 <body>
+
+<!-- ═══════════ REGISTRATION / ONBOARDING ═══════════ -->
+<div id="regScreen" style="display:none;position:fixed;inset:0;z-index:600;background:var(--bg-primary);overflow-y:auto;">
+  <div style="max-width:420px;margin:0 auto;padding:0 20px 40px;">
+
+    <!-- Progress bar -->
+    <div style="position:sticky;top:0;background:var(--bg-primary);padding:16px 0 8px;z-index:10;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span id="regStepLabel" style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:1px;">STEP 1 OF 5</span>
+        <button id="regSkipBtn" onclick="regSkip()" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;display:none;">Skip →</button>
+      </div>
+      <div class="progress-bar"><div id="regProgressFill" class="progress-fill" style="background:linear-gradient(90deg,#6366f1,#8b5cf6);width:20%;"></div></div>
+    </div>
+
+    <!-- ── STEP 1: Welcome ── -->
+    <div id="regStep1" class="reg-step fade-in" style="text-align:center;padding-top:32px;">
+      <div class="animate-float" style="font-size:80px;margin-bottom:24px;">🚀</div>
+      <h1 class="grad-text" style="font-size:32px;font-weight:900;margin-bottom:12px;">NexWallet</h1>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.6;margin-bottom:32px;">India's most powerful hybrid<br/>Crypto &amp; Fiat wallet.<br/>UPI · DeFi · NFT · Staking · Bridge</p>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:36px;">
+        <span class="badge badge-green"><i class="fas fa-shield-alt"></i> RBI Compliant</span>
+        <span class="badge badge-blue"><i class="fas fa-bolt"></i> Sub-2s Tx</span>
+        <span class="badge badge-purple"><i class="fas fa-coins"></i> 100+ Tokens</span>
+        <span class="badge badge-yellow"><i class="fas fa-university"></i> KYC Verified</span>
+      </div>
+      <button class="btn-primary" onclick="regNext()" style="width:100%;padding:14px;font-size:16px;">Get Started 🎉</button>
+      <p style="color:var(--text-muted);font-size:12px;margin-top:16px;">Already have an account? <span onclick="regGoLogin()" style="color:#6366f1;cursor:pointer;font-weight:600;">Sign In</span></p>
+    </div>
+
+    <!-- ── STEP 2: Personal Details ── -->
+    <div id="regStep2" class="reg-step" style="display:none;padding-top:24px;">
+      <div style="margin-bottom:24px;">
+        <div style="font-size:40px;margin-bottom:12px;">👤</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">Personal Details</h2>
+        <p style="color:var(--text-muted);font-size:14px;">Tell us about yourself</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">FULL NAME *</label>
+          <input id="regName" class="input-field" type="text" placeholder="e.g. Arjun Kumar" autocomplete="name"/>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">EMAIL ADDRESS *</label>
+          <input id="regEmail" class="input-field" type="email" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">PHONE NUMBER *</label>
+          <div style="display:flex;gap:8px;">
+            <div style="padding:12px 14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;color:var(--text-muted);font-size:14px;white-space:nowrap;">🇮🇳 +91</div>
+            <input id="regPhone" class="input-field" type="tel" placeholder="98765 43210" maxlength="10"/>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">DATE OF BIRTH *</label>
+          <input id="regDob" class="input-field" type="date" max="2006-12-31"/>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">CHOOSE AVATAR</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'🧑')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">🧑</span>
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'👨')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">👨</span>
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'👩')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">👩</span>
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'🧔')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">🧔</span>
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'👱')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">👱</span>
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'🧕')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">🧕</span>
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'🧑‍💻')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">🧑‍💻</span>
+            <span class="reg-avatar" onclick="selectRegAvatar(this,'🤵')" style="font-size:28px;cursor:pointer;padding:6px;border-radius:10px;border:2px solid transparent;transition:all 0.2s;">🤵</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button class="btn-secondary" onclick="regBack()" style="flex:1;padding:13px;">← Back</button>
+        <button class="btn-primary" onclick="regValidateStep2()" style="flex:2;padding:13px;">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: KYC / Documents ── -->
+    <div id="regStep3" class="reg-step" style="display:none;padding-top:24px;">
+      <div style="margin-bottom:24px;">
+        <div style="font-size:40px;margin-bottom:12px;">🪪</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">KYC Documents</h2>
+        <p style="color:var(--text-muted);font-size:14px;">Required for RBI compliance & high-limit transactions</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">PAN CARD NUMBER *</label>
+          <input id="regPan" class="input-field" type="text" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
+          <span style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">Format: 5 letters + 4 digits + 1 letter</span>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">AADHAAR NUMBER *</label>
+          <input id="regAadhar" class="input-field" type="text" placeholder="XXXX XXXX XXXX" maxlength="14" oninput="formatAadharInput(this)"/>
+          <span style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">12-digit Aadhaar number</span>
+        </div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <i class="fas fa-shield-check" style="color:#10b981;"></i>
+            <span style="font-size:13px;font-weight:600;color:#10b981;">KYC Verification Benefits</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">
+            ✅ Up to ₹10,00,000 daily transaction limit<br/>
+            ✅ Crypto → INR withdrawals enabled<br/>
+            ✅ DeFi &amp; Staking positions unlocked<br/>
+            ✅ PMLA compliant account
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">UPI ID (optional)</label>
+          <input id="regUpi" class="input-field" type="text" placeholder="yourname@okaxis"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button class="btn-secondary" onclick="regBack()" style="flex:1;padding:13px;">← Back</button>
+        <button class="btn-primary" onclick="regValidateStep3()" style="flex:2;padding:13px;">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Security — Set PIN ── -->
+    <div id="regStep4" class="reg-step" style="display:none;padding-top:24px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">Set Your Security PIN</h2>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:28px;">Choose a 6-digit PIN to secure your wallet</p>
+      <div id="regPinDots" style="display:flex;justify-content:center;gap:12px;margin-bottom:8px;">
+        <div class="reg-pin-dot" style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background 0.2s;"></div>
+        <div class="reg-pin-dot" style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background 0.2s;"></div>
+        <div class="reg-pin-dot" style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background 0.2s;"></div>
+        <div class="reg-pin-dot" style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background 0.2s;"></div>
+        <div class="reg-pin-dot" style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background 0.2s;"></div>
+        <div class="reg-pin-dot" style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background 0.2s;"></div>
+      </div>
+      <p id="regPinHint" style="font-size:12px;color:var(--text-muted);margin-bottom:20px;">Enter your 6-digit PIN</p>
+      <div class="grid-3" style="gap:14px;max-width:240px;margin:0 auto 24px;">
+        <button onclick="regPinInput('1')" class="pin-key">1</button>
+        <button onclick="regPinInput('2')" class="pin-key">2</button>
+        <button onclick="regPinInput('3')" class="pin-key">3</button>
+        <button onclick="regPinInput('4')" class="pin-key">4</button>
+        <button onclick="regPinInput('5')" class="pin-key">5</button>
+        <button onclick="regPinInput('6')" class="pin-key">6</button>
+        <button onclick="regPinInput('7')" class="pin-key">7</button>
+        <button onclick="regPinInput('8')" class="pin-key">8</button>
+        <button onclick="regPinInput('9')" class="pin-key">9</button>
+        <button onclick="regPinInput('*')" class="pin-key" style="opacity:0.3;">✱</button>
+        <button onclick="regPinInput('0')" class="pin-key">0</button>
+        <button onclick="regPinInput('<')" class="pin-key">⌫</button>
+      </div>
+      <button class="btn-secondary" onclick="regBack()" style="width:100%;padding:12px;">← Back</button>
+    </div>
+
+    <!-- ── STEP 5: All Set! ── -->
+    <div id="regStep5" class="reg-step" style="display:none;padding-top:48px;text-align:center;">
+      <div style="font-size:80px;margin-bottom:20px;animation:float 2s ease-in-out infinite;">🎊</div>
+      <h2 style="font-size:26px;font-weight:900;margin-bottom:10px;" class="grad-text">Welcome Aboard!</h2>
+      <p id="regWelcomeMsg" style="color:var(--text-muted);font-size:15px;margin-bottom:28px;line-height:1.6;"></p>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:24px;text-align:left;">
+        <div style="font-size:13px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:14px;">YOUR ACCOUNT SUMMARY</div>
+        <div id="regSummary" style="display:flex;flex-direction:column;gap:10px;font-size:14px;"></div>
+      </div>
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:14px;margin-bottom:24px;">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">🎁 WELCOME BONUS</div>
+        <div style="font-size:20px;font-weight:800;color:#6366f1;">₹100 credited to your wallet!</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Use it for your first transaction</div>
+      </div>
+      <button class="btn-primary" onclick="regFinish()" style="width:100%;padding:16px;font-size:16px;font-weight:800;">Launch My Wallet 🚀</button>
+    </div>
+
+  </div>
+</div>
 
 <!-- ═══════════ LOCK SCREEN ═══════════ -->
 <div id="lockScreen">
@@ -219,10 +393,10 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
   <div id="page-dashboard" class="page active">
     <div class="header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:16px;">🔐</div>
+        <div id="dashAvatarCircle" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:16px;">🧑</div>
         <div>
-          <div style="font-size:12px;color:var(--text-muted);">Good morning</div>
-          <div style="font-size:15px;font-weight:700;">Arjun Kumar</div>
+          <div id="dashGreeting" style="font-size:12px;color:var(--text-muted);">Good morning</div>
+          <div id="dashUserName" style="font-size:15px;font-weight:700;">User</div>
         </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
@@ -870,6 +1044,8 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
         </div>
       </div>
       <button class="btn-secondary" style="width:100%;" onclick="showPage('security')"><i class="fas fa-shield-alt"></i> Security Center</button>
+      <button class="btn-secondary" style="width:100%;background:rgba(245,158,11,0.1);color:#f59e0b;border-color:rgba(245,158,11,0.3);" onclick="signOutAccount()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+      <button class="btn-danger" style="width:100%;opacity:0.7;" onclick="resetAccount()"><i class="fas fa-trash-alt"></i> Reset Account</button>
       <button class="btn-danger" style="width:100%;" onclick="lockApp()"><i class="fas fa-lock"></i> Lock Wallet</button>
     </div>
   </div>

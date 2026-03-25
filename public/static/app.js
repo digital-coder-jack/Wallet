@@ -2053,6 +2053,20 @@ window.saveProfile = function() {
   // Update all profile name displays
   document.querySelectorAll('[data-profile-name]').forEach(function(el){ el.textContent = name; });
 
+  // Persist to localStorage
+  var stored = localStorage.getItem('nexwallet_user');
+  if (stored) {
+    try {
+      var user = JSON.parse(stored);
+      user.name = name; user.email = email; user.phone = phone; user.dob = dob;
+      user.avatar = STATE.profile.avatar;
+      localStorage.setItem('nexwallet_user', JSON.stringify(user));
+    } catch(e){}
+  }
+
+  // Refresh dashboard user display
+  if (typeof refreshDashboardUser === 'function') refreshDashboardUser();
+
   showToast(t('profile_saved'), 'success');
 };
 
@@ -2166,3 +2180,346 @@ window.openNetBankingForBank = function(bankName) {
 };
 
 console.log('[NexWallet v4.0] All functions loaded ✓');
+
+// ═══════════════════════════════════════════════════════════════════
+// REGISTRATION / ONBOARDING ENGINE
+// ═══════════════════════════════════════════════════════════════════
+
+var REG = {
+  currentStep: 1,
+  totalSteps: 5,
+  pin1: '',
+  pin2: '',
+  pinPhase: 1, // 1 = set, 2 = confirm
+  selectedAvatar: '🧑',
+  data: {}
+};
+
+// ── BOOT: check if user is registered ────────────────────────────
+function checkRegistration() {
+  var stored = localStorage.getItem('nexwallet_user');
+  if (stored) {
+    // Returning user — load stored profile into STATE and show lock screen
+    try {
+      var user = JSON.parse(stored);
+      STATE.profile.name    = user.name    || STATE.profile.name;
+      STATE.profile.email   = user.email   || STATE.profile.email;
+      STATE.profile.phone   = user.phone   || STATE.profile.phone;
+      STATE.profile.dob     = user.dob     || STATE.profile.dob;
+      STATE.profile.pan     = user.pan     || STATE.profile.pan;
+      STATE.profile.aadhar  = user.aadhar  || STATE.profile.aadhar;
+      STATE.profile.kyc     = user.kyc     || STATE.profile.kyc;
+      STATE.profile.avatar  = user.avatar  || STATE.profile.avatar;
+      STATE.profile.upi     = user.upi     || '';
+      STATE.savedPin        = user.pin     || '';
+      // Update lock screen with stored name/avatar
+      updateLockScreenUser(user);
+    } catch(e) {}
+    // Show lock screen (already visible by default)
+  } else {
+    // New user — hide lock screen, show registration
+    var ls = document.getElementById('lockScreen');
+    var rs = document.getElementById('regScreen');
+    if (ls) ls.style.display = 'none';
+    if (rs) rs.style.display  = 'block';
+  }
+}
+
+// Run on DOM ready
+document.addEventListener('DOMContentLoaded', checkRegistration);
+
+function updateLockScreenUser(user) {
+  // Add user greeting to lock screen
+  var lsDiv = document.querySelector('#lockScreen > div');
+  if (!lsDiv) return;
+  var existing = document.getElementById('lockUserGreet');
+  if (existing) existing.remove();
+  var greet = document.createElement('div');
+  greet.id = 'lockUserGreet';
+  greet.style.cssText = 'margin-bottom:16px;display:flex;align-items:center;gap:10px;justify-content:center;';
+  greet.innerHTML = '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:22px;">'+(user.avatar||'🧑')+'</div>'
+    + '<div style="text-align:left;"><div style="font-size:12px;color:var(--text-muted);">Welcome back</div><div style="font-size:17px;font-weight:700;">'+(user.name||'User')+'</div></div>';
+  // Insert before bio button
+  var bioRow = lsDiv.querySelector('.bio-btn');
+  if (bioRow) lsDiv.insertBefore(greet, bioRow.parentElement);
+}
+
+// ── REG STEP NAVIGATION ──────────────────────────────────────────
+function regShowStep(n) {
+  for (var i = 1; i <= REG.totalSteps; i++) {
+    var el = document.getElementById('regStep' + i);
+    if (el) el.style.display = (i === n) ? 'block' : 'none';
+  }
+  REG.currentStep = n;
+  var label = document.getElementById('regStepLabel');
+  if (label) label.textContent = 'STEP ' + n + ' OF ' + REG.totalSteps;
+  var fill = document.getElementById('regProgressFill');
+  if (fill) fill.style.width = Math.round((n / REG.totalSteps) * 100) + '%';
+  // show/hide skip
+  var skipBtn = document.getElementById('regSkipBtn');
+  if (skipBtn) skipBtn.style.display = (n === 3) ? 'inline-block' : 'none';
+}
+
+function regNext() { regShowStep(REG.currentStep + 1); }
+function regBack() { regShowStep(REG.currentStep - 1); }
+function regSkip() {
+  // Skip KYC step
+  REG.data.pan    = 'PENDING';
+  REG.data.aadhar = 'PENDING';
+  REG.data.kyc    = 'Level 1';
+  REG.data.upi    = '';
+  regShowStep(4);
+}
+
+// Allow going back to registration from lock screen
+function regGoLogin() {
+  // If already registered show lock screen, else stay
+  var stored = localStorage.getItem('nexwallet_user');
+  if (stored) {
+    document.getElementById('regScreen').style.display = 'none';
+    document.getElementById('lockScreen').style.display = 'flex';
+  }
+}
+
+// ── STEP 2: PERSONAL DETAILS ─────────────────────────────────────
+window.selectRegAvatar = function(el, emoji) {
+  document.querySelectorAll('.reg-avatar').forEach(function(a){ a.classList.remove('selected'); });
+  el.classList.add('selected');
+  REG.selectedAvatar = emoji;
+};
+
+function regValidateStep2() {
+  var name  = (document.getElementById('regName')  || {}).value || '';
+  var email = (document.getElementById('regEmail') || {}).value || '';
+  var phone = (document.getElementById('regPhone') || {}).value || '';
+  var dob   = (document.getElementById('regDob')   || {}).value || '';
+
+  if (!name.trim())           { showToast('Please enter your full name', 'error'); return; }
+  if (name.trim().length < 2) { showToast('Name must be at least 2 characters', 'error'); return; }
+  if (!email.trim() || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) { showToast('Please enter a valid email address', 'error'); return; }
+  if (!phone.trim() || phone.replace(/\s/g,'').length < 10)  { showToast('Please enter a valid 10-digit phone number', 'error'); return; }
+  if (!dob) { showToast('Please enter your date of birth', 'error'); return; }
+
+  REG.data.name   = name.trim();
+  REG.data.email  = email.trim();
+  REG.data.phone  = '+91 ' + phone.trim();
+  REG.data.dob    = dob;
+  REG.data.avatar = REG.selectedAvatar;
+  regShowStep(3);
+}
+
+// ── STEP 3: KYC ──────────────────────────────────────────────────
+window.formatAadharInput = function(inp) {
+  var v = inp.value.replace(/\D/g,'').slice(0,12);
+  var f = '';
+  for (var i = 0; i < v.length; i++) { if (i > 0 && i % 4 === 0) f += ' '; f += v[i]; }
+  inp.value = f;
+};
+
+function regValidateStep3() {
+  var pan    = (document.getElementById('regPan')    || {}).value || '';
+  var aadhar = (document.getElementById('regAadhar') || {}).value || '';
+  var upi    = (document.getElementById('regUpi')    || {}).value || '';
+
+  if (!pan.trim())  { showToast('Please enter your PAN card number', 'error'); return; }
+  if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan.trim())) { showToast('Invalid PAN format (e.g. ABCDE1234F)', 'error'); return; }
+  var cleanAadhar = aadhar.replace(/\s/g,'');
+  if (!cleanAadhar || cleanAadhar.length < 12) { showToast('Please enter valid 12-digit Aadhaar number', 'error'); return; }
+
+  REG.data.pan    = pan.trim();
+  REG.data.aadhar = aadhar.trim().slice(0,9).replace(/\d/g,'X') + aadhar.trim().slice(9); // mask first digits
+  REG.data.kyc    = 'Level 3';
+  REG.data.upi    = upi.trim();
+  regShowStep(4);
+}
+
+// ── STEP 4: PIN ───────────────────────────────────────────────────
+function regUpdatePinDots(pin) {
+  var dots = document.querySelectorAll('.reg-pin-dot');
+  dots.forEach(function(d, i){ d.classList.toggle('filled', i < pin.length); });
+}
+
+window.regPinInput = function(key) {
+  var hint = document.getElementById('regPinHint');
+  if (REG.pinPhase === 1) {
+    if (key === '<') { REG.pin1 = REG.pin1.slice(0,-1); }
+    else if (key === '*') { REG.pin1 = ''; }
+    else if (REG.pin1.length < 6) { REG.pin1 += key; }
+    regUpdatePinDots(REG.pin1);
+    if (REG.pin1.length === 6) {
+      setTimeout(function() {
+        REG.pinPhase = 2;
+        REG.pin2 = '';
+        regUpdatePinDots('');
+        if (hint) hint.textContent = 'Confirm your 6-digit PIN';
+        showToast('Now re-enter your PIN to confirm', 'info');
+      }, 300);
+    }
+  } else {
+    if (key === '<') { REG.pin2 = REG.pin2.slice(0,-1); }
+    else if (key === '*') { REG.pin2 = ''; }
+    else if (REG.pin2.length < 6) { REG.pin2 += key; }
+    regUpdatePinDots(REG.pin2);
+    if (REG.pin2.length === 6) {
+      setTimeout(function() {
+        if (REG.pin1 === REG.pin2) {
+          REG.data.pin = REG.pin1;
+          showToast('PIN set successfully! ✓', 'success');
+          regPrepareStep5();
+          regShowStep(5);
+        } else {
+          showToast('PINs do not match. Please try again.', 'error');
+          REG.pinPhase = 1;
+          REG.pin1 = '';
+          REG.pin2 = '';
+          regUpdatePinDots('');
+          if (hint) hint.textContent = 'Enter your 6-digit PIN';
+        }
+      }, 300);
+    }
+  }
+};
+
+// ── STEP 5: SUMMARY ──────────────────────────────────────────────
+function regPrepareStep5() {
+  var d = REG.data;
+  var msg = document.getElementById('regWelcomeMsg');
+  if (msg) msg.textContent = 'Hello ' + d.name + '! Your NexWallet account is ready. Your security PIN has been set and your KYC is ' + (d.kyc === 'Level 3' ? 'verified' : 'pending') + '.';
+
+  var sum = document.getElementById('regSummary');
+  if (sum) {
+    sum.innerHTML = [
+      '<div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Name</span><span style="font-weight:600;">' + d.name + ' ' + d.avatar + '</span></div>',
+      '<div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Email</span><span style="font-weight:600;">' + d.email + '</span></div>',
+      '<div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Phone</span><span style="font-weight:600;">' + d.phone + '</span></div>',
+      '<div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">KYC Level</span><span class="badge badge-green">' + d.kyc + ' ✓</span></div>',
+      '<div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">PAN</span><span style="font-weight:600;">' + (d.pan === 'PENDING' ? '<span class="badge badge-yellow">Pending</span>' : d.pan) + '</span></div>',
+      d.upi ? '<div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">UPI ID</span><span style="font-weight:600;">' + d.upi + '</span></div>' : '',
+      '<div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Security PIN</span><span style="font-weight:600;">●●●●●● Set ✓</span></div>',
+    ].join('');
+  }
+}
+
+// ── FINISH REGISTRATION ───────────────────────────────────────────
+window.regFinish = function() {
+  var d = REG.data;
+
+  // Save to localStorage
+  localStorage.setItem('nexwallet_user', JSON.stringify(d));
+
+  // Apply to STATE
+  STATE.profile.name   = d.name;
+  STATE.profile.email  = d.email;
+  STATE.profile.phone  = d.phone;
+  STATE.profile.dob    = d.dob;
+  STATE.profile.pan    = d.pan === 'PENDING' ? 'Pending KYC' : d.pan;
+  STATE.profile.aadhar = d.aadhar === 'PENDING' ? 'Pending KYC' : d.aadhar;
+  STATE.profile.kyc    = d.kyc;
+  STATE.profile.avatar = d.avatar;
+  STATE.profile.upi    = d.upi || '';
+  STATE.savedPin       = d.pin;
+
+  // Add ₹100 welcome bonus to fiat balance
+  STATE.portfolio.fiat += 10000; // ₹100 in paise equiv
+  STATE.upiBalance     += 10000;
+  addTransaction({ type:'receive', asset:'INR', amount:'+₹100', value:'₹100', time:'Just now', status:'completed', note:'Welcome bonus 🎁' });
+
+  // Hide reg screen, show main app
+  document.getElementById('regScreen').style.display = 'none';
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Initialize app with user data
+  if (typeof initApp === 'function') initApp();
+  else if (typeof window.initApp === 'function') window.initApp();
+
+  showToast('Welcome to NexWallet, ' + d.name + '! 🎉', 'success');
+};
+
+// ── ON APP INIT: Update dashboard with real user data ─────────────
+var _origInitApp = window.initApp;
+window.initApp = function() {
+  if (_origInitApp) _origInitApp();
+  refreshDashboardUser();
+};
+
+function refreshDashboardUser() {
+  var p = STATE.profile;
+  var nameEl = document.getElementById('dashUserName');
+  if (nameEl) nameEl.textContent = p.name || 'User';
+  var avatarEl = document.getElementById('dashAvatarCircle');
+  if (avatarEl) avatarEl.textContent = p.avatar || '🧑';
+  var greetEl = document.getElementById('dashGreeting');
+  if (greetEl) {
+    var h = new Date().getHours();
+    var g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    greetEl.textContent = g;
+  }
+}
+
+// Patch unlock to also load user data
+var _origUnlockApp = window.unlockApp;
+window.unlockApp = function() {
+  if (_origUnlockApp) _origUnlockApp();
+  refreshDashboardUser();
+};
+
+// Patch the biometric unlock similarly
+var _origUnlockBiometric = window.unlockBiometric;
+window.unlockBiometric = function() {
+  if (_origUnlockBiometric) _origUnlockBiometric();
+  refreshDashboardUser();
+};
+
+// ── PIN login: also support saved pin validation ──────────────────
+var _origPinInput = window.pinInput;
+window.pinInput = function(key) {
+  // delegate to original but after unlock also refresh user
+  if (_origPinInput) _origPinInput(key);
+  // Hook: watch pin length in STATE
+  setTimeout(function() {
+    var nameEl = document.getElementById('dashUserName');
+    if (nameEl && nameEl.textContent === 'User') refreshDashboardUser();
+  }, 500);
+};
+
+// On DOMContentLoaded, refresh if app is already shown
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('app') && document.getElementById('app').style.display !== 'none') {
+    refreshDashboardUser();
+  }
+});
+
+// ── SIGN OUT / RESET ACCOUNT ─────────────────────────────────────
+window.signOutAccount = function() {
+  showConfirm('Sign out of NexWallet?', function() {
+    // Just go to lock screen
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('lockScreen').style.display = 'flex';
+    STATE.pin = '';
+    var dots = document.querySelectorAll('#pinDots .pin-dot');
+    dots.forEach(function(d){ d.style.background='transparent'; });
+  });
+};
+
+window.resetAccount = function() {
+  showConfirm('Reset account? This will delete all your data!', function() {
+    localStorage.removeItem('nexwallet_user');
+    location.reload();
+  });
+};
+
+// Export registration functions
+window.regNext = regNext;
+window.regBack = regBack;
+window.regSkip = regSkip;
+window.regGoLogin = regGoLogin;
+window.regValidateStep2 = regValidateStep2;
+window.regValidateStep3 = regValidateStep3;
+window.regUpdatePinDots = regUpdatePinDots;
+window.regPrepareStep5 = regPrepareStep5;
+window.regShowStep = regShowStep;
+window.formatAadharInput = formatAadharInput;
+window.refreshDashboardUser = refreshDashboardUser;
+
+console.log('[NexWallet] Registration engine loaded ✓');

@@ -89,8 +89,6 @@ wrangler login
 npm run deploy
 ```
 
-Your app will be live at: `https://nexwallet.pages.dev` ✅
-
 ---
 
 ## 🗂️ Project Structure

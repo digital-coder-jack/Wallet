@@ -1,11 +1,27 @@
 {
-  "name": "webapp",
+  "name": "nexwallet",
+  "version": "2.0.0",
+  "description": "India's most powerful Hybrid Crypto & Fiat Wallet — UPI, DeFi, NFT, Staking, Cross-chain Bridge",
   "type": "module",
+  "author": "NexWallet",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/digital-coder-jack/Wallet.git"
+  },
+  "keywords": [
+    "crypto", "wallet", "upi", "defi", "nft", "staking", "hono", "cloudflare", "india"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "wrangler pages dev",
-    "deploy": "npm run build && wrangler pages deploy",
+    "preview": "wrangler pages dev dist --ip 0.0.0.0 --port 3000",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name nexwallet",
+    "start": "npm run dev",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {

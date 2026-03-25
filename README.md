@@ -59,8 +59,6 @@ npm install
 npm run dev
 ```
 
-Launch your wallet🎉🎈  https://3000-iiy3pk9lwvtpkvlm392vf-c07dda5e.sandbox.gensparksite.com/
-
 ---
 
 ## 📦 All Available Scripts

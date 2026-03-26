@@ -2195,11 +2195,238 @@ var REG = {
   data: {}
 };
 
-// ── BOOT: check if user is registered ────────────────────────────
-function checkRegistration() {
+// ══════════════════════════════════════════════════════════════════
+// CLOUDFLARE-STYLE IDENTITY VERIFICATION ENGINE
+// ══════════════════════════════════════════════════════════════════
+
+var CF = {
+  method: 'email',   // current method: email | phone | aadhar
+  otpSent: { email: false, phone: false, aadhar: false },
+  timer: { email: null, phone: null, aadhar: null },
+  countdown: { email: 0, phone: 0, aadhar: 0 }
+};
+
+function cfSwitchMethod(method) {
+  CF.method = method;
+  ['email','phone','aadhar'].forEach(function(m) {
+    var panel = document.getElementById('cfPanel-' + m);
+    var tab   = document.getElementById('cfTab-' + m);
+    if (panel) panel.style.display = (m === method) ? 'block' : 'none';
+    if (tab)   { tab.classList.toggle('active', m === method); }
+  });
+  cfClearError();
+}
+
+function cfShowError(msg, isSuccess) {
+  var bar = document.getElementById('cfErrorBar');
+  if (!bar) return;
+  bar.style.display = 'block';
+  if (isSuccess) {
+    bar.style.background = 'rgba(16,185,129,0.12)';
+    bar.style.border     = '1px solid rgba(16,185,129,0.3)';
+    bar.style.color      = '#10b981';
+  } else {
+    bar.style.background = 'rgba(239,68,68,0.1)';
+    bar.style.border     = '1px solid rgba(239,68,68,0.25)';
+    bar.style.color      = '#ef4444';
+  }
+  bar.textContent = msg;
+  // Scroll bar into view
+  bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function cfClearError() {
+  var bar = document.getElementById('cfErrorBar');
+  if (bar) bar.style.display = 'none';
+}
+
+function cfStartResendTimer(method) {
+  CF.countdown[method] = 60;
+  var resendBtn = document.getElementById('cf' + method.charAt(0).toUpperCase() + method.slice(1) + 'ResendBtn');
+  // capitalise first letter properly for 'aadhar'
+  var key = method === 'aadhar' ? 'Aadhar' : (method.charAt(0).toUpperCase() + method.slice(1));
+  resendBtn = document.getElementById('cf' + key + 'ResendBtn');
+  if (CF.timer[method]) clearInterval(CF.timer[method]);
+  CF.timer[method] = setInterval(function() {
+    CF.countdown[method]--;
+    if (resendBtn) resendBtn.textContent = 'Resend (' + CF.countdown[method] + 's)';
+    if (CF.countdown[method] <= 0) {
+      clearInterval(CF.timer[method]);
+      if (resendBtn) { resendBtn.textContent = 'Resend'; resendBtn.style.display = 'inline-flex'; }
+    }
+  }, 1000);
+}
+
+// ── SEND EMAIL OTP ────────────────────────────────────────────────
+window.cfSendEmailOtp = async function() {
+  cfClearError();
+  var email = (document.getElementById('cfEmailInput') || {}).value || '';
+  if (!email.trim() || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+    cfShowError('❌ Please enter a valid email address before requesting an OTP.');
+    return;
+  }
+  var btn = document.querySelector('#cfEmailSendRow button');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…'; }
+  try {
+    var res = await fetch('/api/verify/send-email-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() })
+    });
+    var data = await res.json();
+    if (data.success) {
+      CF.otpSent.email = true;
+      document.getElementById('cfEmailOtpRow').style.display  = 'block';
+      document.getElementById('cfEmailSendRow').style.display = 'none';
+      document.getElementById('cfEmailVerifyRow').style.display = 'block';
+      document.getElementById('cfEmailResendBtn').style.display = 'inline-flex';
+      document.getElementById('cfEmailOtpMsg').textContent = '— ' + data.message;
+      cfShowError('📧 ' + data.message, true);
+      cfStartResendTimer('email');
+    } else {
+      cfShowError(data.error || 'Failed to send OTP. Please check your email and try again.');
+    }
+  } catch(e) {
+    cfShowError('Network error. Please check your connection and try again.');
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP to Email'; }
+};
+
+// ── SEND PHONE OTP ────────────────────────────────────────────────
+window.cfSendPhoneOtp = async function() {
+  cfClearError();
+  var phone = (document.getElementById('cfPhoneInput') || {}).value || '';
+  if (phone.replace(/\D/g,'').length !== 10) {
+    cfShowError('❌ Please enter a valid 10-digit Indian mobile number. Wrong info will be flagged.');
+    return;
+  }
+  var btn = document.querySelector('#cfPhoneSendRow button');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…'; }
+  try {
+    var res = await fetch('/api/verify/send-phone-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: phone.replace(/\D/g,''), type: 'phone' })
+    });
+    var data = await res.json();
+    if (data.success) {
+      CF.otpSent.phone = true;
+      document.getElementById('cfPhoneOtpRow').style.display  = 'block';
+      document.getElementById('cfPhoneSendRow').style.display = 'none';
+      document.getElementById('cfPhoneVerifyRow').style.display = 'block';
+      document.getElementById('cfPhoneResendBtn').style.display = 'inline-flex';
+      document.getElementById('cfPhoneOtpMsg').textContent = '— ' + data.message;
+      cfShowError('📱 ' + data.message, true);
+      cfStartResendTimer('phone');
+    } else {
+      cfShowError(data.error || '❌ Wrong phone number. Please enter correct details.');
+    }
+  } catch(e) {
+    cfShowError('Network error. Please check your connection and try again.');
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sms"></i> Send OTP to Phone'; }
+};
+
+// ── SEND AADHAR OTP ───────────────────────────────────────────────
+window.cfSendAadharOtp = async function() {
+  cfClearError();
+  var aadhar = (document.getElementById('cfAadharInput') || {}).value || '';
+  if (aadhar.replace(/\D/g,'').length !== 12) {
+    cfShowError('❌ Invalid Aadhaar number. Please enter all 12 digits. Wrong info is flagged for security.');
+    return;
+  }
+  var btn = document.querySelector('#cfAadharSendRow button');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…'; }
+  try {
+    var res = await fetch('/api/verify/send-phone-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: aadhar, type: 'aadhar' })
+    });
+    var data = await res.json();
+    if (data.success) {
+      CF.otpSent.aadhar = true;
+      document.getElementById('cfAadharOtpRow').style.display  = 'block';
+      document.getElementById('cfAadharSendRow').style.display = 'none';
+      document.getElementById('cfAadharVerifyRow').style.display = 'block';
+      document.getElementById('cfAadharResendBtn').style.display = 'inline-flex';
+      document.getElementById('cfAadharOtpMsg').textContent = '— ' + data.message;
+      cfShowError('🪪 ' + data.message, true);
+      cfStartResendTimer('aadhar');
+    } else {
+      cfShowError(data.error || '❌ Wrong Aadhaar number. Please enter correct details.');
+    }
+  } catch(e) {
+    cfShowError('Network error. Please check your connection and try again.');
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-fingerprint"></i> Send OTP to Aadhaar Number'; }
+};
+
+// ── VERIFY OTP ────────────────────────────────────────────────────
+window.cfVerifyOtp = async function(method) {
+  cfClearError();
+  var key = '', otp = '';
+  if (method === 'email') {
+    key = (document.getElementById('cfEmailInput') || {}).value || '';
+    otp = (document.getElementById('cfEmailOtpInput') || {}).value || '';
+  } else if (method === 'phone') {
+    key = (document.getElementById('cfPhoneInput') || {}).value || '';
+    otp = (document.getElementById('cfPhoneOtpInput') || {}).value || '';
+  } else if (method === 'aadhar') {
+    key = (document.getElementById('cfAadharInput') || {}).value || '';
+    otp = (document.getElementById('cfAadharOtpInput') || {}).value || '';
+  }
+
+  if (!otp.trim() || otp.trim().length !== 6) {
+    cfShowError('❌ Please enter the complete 6-digit OTP sent to you.');
+    return;
+  }
+
+  var capKey = method === 'aadhar' ? 'Aadhar' : (method.charAt(0).toUpperCase() + method.slice(1));
+  var verifyBtn = document.querySelector('#cf' + capKey + 'VerifyRow button');
+  if (verifyBtn) { verifyBtn.disabled = true; verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying…'; }
+
+  try {
+    var res = await fetch('/api/verify/confirm-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: key.trim(), otp: otp.trim(), type: method })
+    });
+    var data = await res.json();
+    if (data.success) {
+      // ✅ VERIFIED — mark session and proceed
+      sessionStorage.setItem('nexwallet_verified', '1');
+      cfShowError('✅ Identity verified successfully! Loading your wallet…', true);
+      setTimeout(function() { cfProceedToApp(); }, 1200);
+    } else {
+      cfShowError(data.error || '❌ Wrong OTP. Please enter correct details.');
+      if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify OTP'; }
+    }
+  } catch(e) {
+    cfShowError('Network error. Please try again.');
+    if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify OTP'; }
+  }
+};
+
+// ── After verification: hide cfVerifyScreen and show next screen ──
+function cfProceedToApp() {
+  var cfScreen = document.getElementById('cfVerifyScreen');
+  if (cfScreen) {
+    cfScreen.style.opacity = '0';
+    cfScreen.style.transition = 'opacity 0.5s ease';
+    setTimeout(function() {
+      cfScreen.style.display = 'none';
+      // Now determine what to show next
+      cfLoadMainApp();
+    }, 500);
+  } else {
+    cfLoadMainApp();
+  }
+}
+
+function cfLoadMainApp() {
   var stored = localStorage.getItem('nexwallet_user');
   if (stored) {
-    // Returning user — load stored profile into STATE and show lock screen
     try {
       var user = JSON.parse(stored);
       STATE.profile.name    = user.name    || STATE.profile.name;
@@ -2212,17 +2439,34 @@ function checkRegistration() {
       STATE.profile.avatar  = user.avatar  || STATE.profile.avatar;
       STATE.profile.upi     = user.upi     || '';
       STATE.savedPin        = user.pin     || '';
-      // Update lock screen with stored name/avatar
       updateLockScreenUser(user);
     } catch(e) {}
-    // Show lock screen (already visible by default)
-  } else {
-    // New user — hide lock screen, show registration
     var ls = document.getElementById('lockScreen');
-    var rs = document.getElementById('regScreen');
-    if (ls) ls.style.display = 'none';
-    if (rs) rs.style.display  = 'block';
+    if (ls) ls.style.display = 'flex';
+  } else {
+    var ls2 = document.getElementById('lockScreen');
+    var rs  = document.getElementById('regScreen');
+    if (ls2) ls2.style.display = 'none';
+    if (rs)  rs.style.display  = 'block';
   }
+}
+
+// ── BOOT: check if user is registered ────────────────────────────
+function checkRegistration() {
+  // Always show the Cloudflare verification screen first unless already verified in this session
+  var verified = sessionStorage.getItem('nexwallet_verified');
+  if (!verified) {
+    // Show verification screen; hide everything else
+    var cfScreen = document.getElementById('cfVerifyScreen');
+    var ls       = document.getElementById('lockScreen');
+    var rs       = document.getElementById('regScreen');
+    if (cfScreen) cfScreen.style.display = 'flex';
+    if (ls) ls.style.display = 'none';
+    if (rs) rs.style.display = 'none';
+    return;
+  }
+  // Already verified in this session — load normally
+  cfLoadMainApp();
 }
 
 // Run on DOM ready

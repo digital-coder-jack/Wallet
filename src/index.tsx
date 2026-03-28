@@ -8,110 +8,59 @@ app.use('*', cors())
 // ─── Serve static files ───────────────────────────────────────────────────
 app.use('/static/*', serveStatic({ root: './public' }))
 
-// ─── In-memory OTP store (TTL 10 min) ────────────────────────────────────
-const OTP_STORE: Map<string, { otp: string; expires: number; attempts: number }> = new Map()
-// ─── Wrong-attempt log (for admin alerting) ──────────────────────────────
-const WRONG_LOG: { time: string; type: string; input: string; ip: string }[] = []
+// ─── Python OTP Service base URL ─────────────────────────────────────────────
+const OTP_SERVICE = 'http://127.0.0.1:8000'
 
-function genOTP(): string {
-  return String(Math.floor(100000 + Math.random() * 900000))
-}
-
-function cleanExpired() {
-  const now = Date.now()
-  OTP_STORE.forEach((v, k) => { if (v.expires < now) OTP_STORE.delete(k) })
+async function otpProxy(path: string, req: Request, c: any) {
+  try {
+    const body = await req.json().catch(() => ({}))
+    const clientIP = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '127.0.0.1'
+    const resp = await fetch(`${OTP_SERVICE}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Forwarded-For': clientIP,
+      },
+      body: JSON.stringify(body),
+    })
+    const data = await resp.json() as any
+    if (!resp.ok) {
+      return c.json({ success: false, error: data.detail || 'OTP service error.' }, resp.status as any)
+    }
+    return c.json({ success: true, ...data })
+  } catch (e) {
+    return c.json({ success: false, error: 'OTP service unavailable. Please try again shortly.' }, 503 as any)
+  }
 }
 
 // ─── OTP: Send via Email ──────────────────────────────────────────────────
 app.post('/api/verify/send-email-otp', async (c) => {
-  const { email } = await c.req.json().catch(() => ({})) as { email?: string }
-  cleanExpired()
-  if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
-    return c.json({ success: false, error: 'Invalid email address. Please check and re-enter.' }, 400)
-  }
-  const otp = genOTP()
-  OTP_STORE.set('email:' + email.toLowerCase(), { otp, expires: Date.now() + 10 * 60 * 1000, attempts: 0 })
-  // In production integrate SendGrid/Mailgun here. We simulate success.
-  console.log(`[EMAIL OTP] To: ${email}  OTP: ${otp}`)
-  return c.json({ success: true, message: `OTP sent to ${email}. Check your inbox (demo OTP: ${otp})` })
+  return otpProxy('/otp/send-email', c.req.raw, c)
 })
 
-// ─── OTP: Send via Phone (phone / Aadhaar-linked number) ─────────────────
+// ─── OTP: Send via Phone / Aadhaar ───────────────────────────────────────
 app.post('/api/verify/send-phone-otp', async (c) => {
-  const { value, type } = await c.req.json().catch(() => ({})) as { value?: string; type?: string }
-  cleanExpired()
-  const isAadhar = type === 'aadhar'
-  const isPhone  = type === 'phone'
-
-  if (isPhone) {
-    const ph = (value || '').replace(/\D/g, '')
-    if (ph.length !== 10) {
-      WRONG_LOG.push({ time: new Date().toISOString(), type: 'phone', input: value || '', ip: c.req.header('cf-connecting-ip') || 'unknown' })
-      return c.json({ success: false, error: '❌ Invalid phone number. Please enter a valid 10-digit Indian mobile number.' }, 400)
-    }
-    const otp = genOTP()
-    OTP_STORE.set('phone:' + ph, { otp, expires: Date.now() + 10 * 60 * 1000, attempts: 0 })
-    console.log(`[PHONE OTP] To: +91${ph}  OTP: ${otp}`)
-    return c.json({ success: true, message: `OTP sent to +91 XXXXXX${ph.slice(-4)}. (demo OTP: ${otp})` })
-  }
-
-  if (isAadhar) {
-    const aaClean = (value || '').replace(/\D/g, '')
-    if (aaClean.length !== 12) {
-      WRONG_LOG.push({ time: new Date().toISOString(), type: 'aadhar', input: value || '', ip: c.req.header('cf-connecting-ip') || 'unknown' })
-      return c.json({ success: false, error: '❌ Invalid Aadhaar number. Must be exactly 12 digits. Please check and re-enter.' }, 400)
-    }
-    // Simulate UIDAI masked phone lookup — last 4 digits of Aadhaar seed the fake number
-    const fakePhone = '98' + aaClean.slice(4, 8) + aaClean.slice(8, 12)
-    const otp = genOTP()
-    OTP_STORE.set('aadhar:' + aaClean, { otp, expires: Date.now() + 10 * 60 * 1000, attempts: 0 })
-    console.log(`[AADHAR OTP] AadharLinked: ${fakePhone}  OTP: ${otp}`)
-    const masked = '+91 XXXXXX' + fakePhone.slice(-4)
-    return c.json({ success: true, message: `OTP sent to Aadhaar-linked number ${masked}. (demo OTP: ${otp})` })
-  }
-
-  return c.json({ success: false, error: 'Invalid request type.' }, 400)
+  return otpProxy('/otp/send-phone', c.req.raw, c)
 })
 
 // ─── OTP: Verify ─────────────────────────────────────────────────────────
 app.post('/api/verify/confirm-otp', async (c) => {
-  const { key, otp, type } = await c.req.json().catch(() => ({})) as { key?: string; otp?: string; type?: string }
-  cleanExpired()
-  if (!key || !otp || !type) return c.json({ success: false, error: 'Missing parameters.' }, 400)
-
-  let storeKey = ''
-  if (type === 'email')  storeKey = 'email:'  + (key || '').toLowerCase()
-  if (type === 'phone')  storeKey = 'phone:'  + (key || '').replace(/\D/g, '')
-  if (type === 'aadhar') storeKey = 'aadhar:' + (key || '').replace(/\D/g, '')
-
-  const entry = OTP_STORE.get(storeKey)
-  if (!entry) {
-    return c.json({ success: false, error: '⏰ OTP expired or not requested. Please request a new OTP.' }, 400)
-  }
-  if (entry.attempts >= 3) {
-    OTP_STORE.delete(storeKey)
-    WRONG_LOG.push({ time: new Date().toISOString(), type: type + '_max_attempts', input: key || '', ip: c.req.header('cf-connecting-ip') || 'unknown' })
-    return c.json({ success: false, error: '🚫 Too many wrong attempts. Please request a new OTP.' }, 429)
-  }
-  if (entry.otp !== otp.trim()) {
-    entry.attempts++
-    WRONG_LOG.push({ time: new Date().toISOString(), type: type + '_wrong_otp', input: key || '', ip: c.req.header('cf-connecting-ip') || 'unknown' })
-    const left = 3 - entry.attempts
-    return c.json({ success: false, error: `❌ Wrong OTP entered. ${left} attempt(s) remaining. Please enter correct details.` }, 400)
-  }
-
-  OTP_STORE.delete(storeKey)
-  return c.json({ success: true, message: '✅ Verification successful! Identity confirmed.' })
+  return otpProxy('/otp/verify', c.req.raw, c)
 })
 
-// ─── Admin: Wrong-attempt log ─────────────────────────────────────────────
-app.get('/api/admin/wrong-log', (c) => {
-  // In production protect this with a secret header
+// ─── Admin: Audit log (proxied from Python service) ───────────────────────
+app.get('/api/admin/wrong-log', async (c) => {
   const secret = c.req.header('x-admin-key')
-  if (secret !== 'nexwallet-admin-2024') {
-    return c.json({ error: 'Unauthorized' }, 401)
+  try {
+    const resp = await fetch(`${OTP_SERVICE}/admin/audit-log?limit=100`, {
+      headers: { 'x-admin-key': secret || '' },
+    })
+    const data = await resp.json() as any
+    if (!resp.ok) return c.json({ error: 'Unauthorized' }, 401 as any)
+    return c.json(data)
+  } catch {
+    return c.json({ error: 'OTP service unavailable' }, 503 as any)
   }
-  return c.json({ total: WRONG_LOG.length, entries: WRONG_LOG.slice(-100) })
 })
 
 // ─── API Routes ─────────────────────────────────────────────────────────────

@@ -12,6 +12,14 @@ dist/
 .env
 .env.local
 .env.*.local
+otp_service/.env
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
 
 # ── Logs ─────────────────────────────────────────────────
 logs/

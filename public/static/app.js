@@ -2257,6 +2257,22 @@ function cfStartResendTimer(method) {
   }, 1000);
 }
 
+// ── Shared helper: show OTP-sent success state ────────────────────
+function cfShowOtpSentState(method, message) {
+  var capKey = method === 'aadhar' ? 'Aadhar' : (method.charAt(0).toUpperCase() + method.slice(1));
+  var otpRow    = document.getElementById('cf' + capKey + 'OtpRow');
+  var sendRow   = document.getElementById('cf' + capKey + 'SendRow');
+  var verifyRow = document.getElementById('cf' + capKey + 'VerifyRow');
+  var resendBtn = document.getElementById('cf' + capKey + 'ResendBtn');
+  var otpMsg    = document.getElementById('cf' + capKey + 'OtpMsg');
+  if (otpRow)    otpRow.style.display    = 'block';
+  if (sendRow)   sendRow.style.display   = 'none';
+  if (verifyRow) verifyRow.style.display = 'block';
+  if (resendBtn) resendBtn.style.display = 'inline-flex';
+  if (otpMsg)    otpMsg.textContent      = message;
+  cfStartResendTimer(method);
+}
+
 // ── SEND EMAIL OTP ────────────────────────────────────────────────
 window.cfSendEmailOtp = async function() {
   cfClearError();
@@ -2276,18 +2292,13 @@ window.cfSendEmailOtp = async function() {
     var data = await res.json();
     if (data.success) {
       CF.otpSent.email = true;
-      document.getElementById('cfEmailOtpRow').style.display  = 'block';
-      document.getElementById('cfEmailSendRow').style.display = 'none';
-      document.getElementById('cfEmailVerifyRow').style.display = 'block';
-      document.getElementById('cfEmailResendBtn').style.display = 'inline-flex';
-      document.getElementById('cfEmailOtpMsg').textContent = '— ' + data.message;
+      cfShowOtpSentState('email', '— ' + data.message);
       cfShowError('📧 ' + data.message, true);
-      cfStartResendTimer('email');
     } else {
       cfShowError(data.error || 'Failed to send OTP. Please check your email and try again.');
     }
   } catch(e) {
-    cfShowError('Network error. Please check your connection and try again.');
+    cfShowError('⚠️ Network error. Please check your connection and try again.');
   }
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP to Email'; }
 };
@@ -2297,7 +2308,7 @@ window.cfSendPhoneOtp = async function() {
   cfClearError();
   var phone = (document.getElementById('cfPhoneInput') || {}).value || '';
   if (phone.replace(/\D/g,'').length !== 10) {
-    cfShowError('❌ Please enter a valid 10-digit Indian mobile number. Wrong info will be flagged.');
+    cfShowError('❌ Invalid phone number. Enter a valid 10-digit Indian mobile number. Wrong details are flagged for security review.');
     return;
   }
   var btn = document.querySelector('#cfPhoneSendRow button');
@@ -2311,28 +2322,23 @@ window.cfSendPhoneOtp = async function() {
     var data = await res.json();
     if (data.success) {
       CF.otpSent.phone = true;
-      document.getElementById('cfPhoneOtpRow').style.display  = 'block';
-      document.getElementById('cfPhoneSendRow').style.display = 'none';
-      document.getElementById('cfPhoneVerifyRow').style.display = 'block';
-      document.getElementById('cfPhoneResendBtn').style.display = 'inline-flex';
-      document.getElementById('cfPhoneOtpMsg').textContent = '— ' + data.message;
+      cfShowOtpSentState('phone', '— ' + data.message);
       cfShowError('📱 ' + data.message, true);
-      cfStartResendTimer('phone');
     } else {
       cfShowError(data.error || '❌ Wrong phone number. Please enter correct details.');
     }
   } catch(e) {
-    cfShowError('Network error. Please check your connection and try again.');
+    cfShowError('⚠️ Network error. Please check your connection and try again.');
   }
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sms"></i> Send OTP to Phone'; }
 };
 
-// ── SEND AADHAR OTP ───────────────────────────────────────────────
+// ── SEND AADHAAR OTP ──────────────────────────────────────────────
 window.cfSendAadharOtp = async function() {
   cfClearError();
   var aadhar = (document.getElementById('cfAadharInput') || {}).value || '';
   if (aadhar.replace(/\D/g,'').length !== 12) {
-    cfShowError('❌ Invalid Aadhaar number. Please enter all 12 digits. Wrong info is flagged for security.');
+    cfShowError('❌ Invalid Aadhaar number. Must be 12 digits. Wrong details are logged and flagged for security review.');
     return;
   }
   var btn = document.querySelector('#cfAadharSendRow button');
@@ -2341,23 +2347,18 @@ window.cfSendAadharOtp = async function() {
     var res = await fetch('/api/verify/send-phone-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value: aadhar, type: 'aadhar' })
+      body: JSON.stringify({ value: aadhar.replace(/\s/g,''), type: 'aadhar' })
     });
     var data = await res.json();
     if (data.success) {
       CF.otpSent.aadhar = true;
-      document.getElementById('cfAadharOtpRow').style.display  = 'block';
-      document.getElementById('cfAadharSendRow').style.display = 'none';
-      document.getElementById('cfAadharVerifyRow').style.display = 'block';
-      document.getElementById('cfAadharResendBtn').style.display = 'inline-flex';
-      document.getElementById('cfAadharOtpMsg').textContent = '— ' + data.message;
+      cfShowOtpSentState('aadhar', '— ' + data.message);
       cfShowError('🪪 ' + data.message, true);
-      cfStartResendTimer('aadhar');
     } else {
       cfShowError(data.error || '❌ Wrong Aadhaar number. Please enter correct details.');
     }
   } catch(e) {
-    cfShowError('Network error. Please check your connection and try again.');
+    cfShowError('⚠️ Network error. Please check your connection and try again.');
   }
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-fingerprint"></i> Send OTP to Aadhaar Number'; }
 };
@@ -2367,22 +2368,23 @@ window.cfVerifyOtp = async function(method) {
   cfClearError();
   var key = '', otp = '';
   if (method === 'email') {
-    key = (document.getElementById('cfEmailInput') || {}).value || '';
+    key = (document.getElementById('cfEmailInput')     || {}).value || '';
     otp = (document.getElementById('cfEmailOtpInput') || {}).value || '';
   } else if (method === 'phone') {
-    key = (document.getElementById('cfPhoneInput') || {}).value || '';
+    key = (document.getElementById('cfPhoneInput')     || {}).value || '';
     otp = (document.getElementById('cfPhoneOtpInput') || {}).value || '';
   } else if (method === 'aadhar') {
-    key = (document.getElementById('cfAadharInput') || {}).value || '';
+    key = (document.getElementById('cfAadharInput')     || {}).value || '';
     otp = (document.getElementById('cfAadharOtpInput') || {}).value || '';
   }
 
-  if (!otp.trim() || otp.trim().length !== 6) {
+  otp = otp.replace(/\D/g,'').trim();
+  if (otp.length !== 6) {
     cfShowError('❌ Please enter the complete 6-digit OTP sent to you.');
     return;
   }
 
-  var capKey = method === 'aadhar' ? 'Aadhar' : (method.charAt(0).toUpperCase() + method.slice(1));
+  var capKey    = method === 'aadhar' ? 'Aadhar' : (method.charAt(0).toUpperCase() + method.slice(1));
   var verifyBtn = document.querySelector('#cf' + capKey + 'VerifyRow button');
   if (verifyBtn) { verifyBtn.disabled = true; verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying…'; }
 
@@ -2390,11 +2392,10 @@ window.cfVerifyOtp = async function(method) {
     var res = await fetch('/api/verify/confirm-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: key.trim(), otp: otp.trim(), type: method })
+      body: JSON.stringify({ key: key.trim(), otp: otp, type: method })
     });
     var data = await res.json();
     if (data.success) {
-      // ✅ VERIFIED — mark session and proceed
       sessionStorage.setItem('nexwallet_verified', '1');
       cfShowError('✅ Identity verified successfully! Loading your wallet…', true);
       setTimeout(function() { cfProceedToApp(); }, 1200);
@@ -2403,7 +2404,7 @@ window.cfVerifyOtp = async function(method) {
       if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify OTP'; }
     }
   } catch(e) {
-    cfShowError('Network error. Please try again.');
+    cfShowError('⚠️ Network error. Please try again.');
     if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify OTP'; }
   }
 };

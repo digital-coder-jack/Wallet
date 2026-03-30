@@ -14,7 +14,13 @@ const OTP_SERVICE = 'http://127.0.0.1:8000'
 async function otpProxy(path: string, req: Request, c: any) {
   try {
     const body = await req.json().catch(() => ({}))
-    const clientIP = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '127.0.0.1'
+    // Pass real client IP to Python service for rate limiting
+    const clientIP =
+      c.req.header('cf-connecting-ip') ||
+      c.req.header('x-real-ip') ||
+      c.req.header('x-forwarded-for') ||
+      '127.0.0.1'
+
     const resp = await fetch(`${OTP_SERVICE}${path}`, {
       method: 'POST',
       headers: {
@@ -23,13 +29,33 @@ async function otpProxy(path: string, req: Request, c: any) {
       },
       body: JSON.stringify(body),
     })
+
     const data = await resp.json() as any
+
+    // Extract the user-friendly error message from Python FastAPI response
+    // FastAPI validation errors come as { detail: "..." } or { detail: [...] }
     if (!resp.ok) {
-      return c.json({ success: false, error: data.detail || 'OTP service error.' }, resp.status as any)
+      let errMsg = 'OTP service error. Please try again.'
+      if (typeof data.detail === 'string') {
+        errMsg = data.detail
+      } else if (typeof data.error === 'string') {
+        errMsg = data.error
+      } else if (Array.isArray(data.detail) && data.detail.length > 0) {
+        // Pydantic validation error array — get first message
+        const first = data.detail[0]
+        errMsg = (typeof first.msg === 'string') ? first.msg : errMsg
+        if (errMsg.startsWith('Value error, ')) errMsg = errMsg.slice(13)
+      }
+      return c.json({ success: false, error: errMsg }, resp.status as any)
     }
+
+    // Merge success response — keep all Python fields intact
     return c.json({ success: true, ...data })
   } catch (e) {
-    return c.json({ success: false, error: 'OTP service unavailable. Please try again shortly.' }, 503 as any)
+    return c.json(
+      { success: false, error: '⚠️ OTP service unavailable. Please try again in a moment.' },
+      503 as any
+    )
   }
 }
 
@@ -218,147 +244,172 @@ body{background:var(--bg-primary);color:var(--text);font-family:'Inter',system-u
 </head>
 <body>
 
-<!-- ═══════════ CLOUDFLARE-STYLE IDENTITY VERIFICATION ═══════════ -->
-<div id="cfVerifyScreen" style="display:flex;position:fixed;inset:0;z-index:700;background:var(--bg-primary);overflow-y:auto;align-items:flex-start;justify-content:center;">
-  <div style="max-width:440px;width:100%;margin:0 auto;padding:24px 20px 48px;">
+<!-- ═══════════ IDENTITY VERIFICATION SCREEN ═══════════ -->
+<style>
+/* OTP digit boxes */
+.otp-box-row{display:flex;gap:8px;justify-content:center;margin-bottom:6px;}
+.otp-digit{width:44px;height:52px;border-radius:10px;border:2px solid var(--border);background:var(--bg-card2);color:var(--text);font-size:22px;font-weight:800;text-align:center;outline:none;transition:all 0.2s;caret-color:transparent;-webkit-text-security:none;}
+.otp-digit:focus{border-color:#6366f1;background:rgba(99,102,241,0.08);box-shadow:0 0 0 3px rgba(99,102,241,0.15);}
+.otp-digit.filled{border-color:#6366f1;color:#a5b4fc;}
+.otp-digit.error{border-color:#ef4444;background:rgba(239,68,68,0.06);}
+.otp-digit.success{border-color:#10b981;color:#10b981;background:rgba(16,185,129,0.08);}
+/* Step indicator */
+.cf-step{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.cf-step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all 0.3s;}
+.cf-step-dot.done{background:linear-gradient(135deg,#10b981,#059669);color:white;}
+.cf-step-dot.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;box-shadow:0 0 14px rgba(99,102,241,0.4);}
+.cf-step-dot.pending{background:var(--bg-card2);color:var(--text-muted);border:2px solid var(--border);}
+.cf-step-line{flex:1;height:2px;background:var(--border);border-radius:1px;transition:all 0.3s;}
+.cf-step-line.done{background:linear-gradient(90deg,#10b981,#6366f1);}
+/* Shake animation for wrong OTP */
+@keyframes cfShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-7px)}30%{transform:translateX(7px)}45%{transform:translateX(-5px)}60%{transform:translateX(5px)}75%{transform:translateX(-3px)}90%{transform:translateX(3px)}}
+/* Locked state */
+.lock-overlay{text-align:center;padding:28px 24px;}
+</style>
 
-    <!-- Header bar (Cloudflare-style) -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.18);border-radius:14px;margin-bottom:28px;">
+<div id="cfVerifyScreen" style="display:flex;position:fixed;inset:0;z-index:700;background:var(--bg-primary);overflow-y:auto;align-items:flex-start;justify-content:center;">
+  <div style="max-width:440px;width:100%;margin:0 auto;padding:20px 16px 60px;">
+
+    <!-- ── Top bar ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.15);border-radius:12px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
-          <i class="fas fa-shield-alt" style="color:white;font-size:14px;"></i>
+        <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-shield-alt" style="color:white;font-size:13px;"></i>
         </div>
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text);">NexWallet Security</div>
-          <div style="font-size:11px;color:var(--text-muted);">nexwallet.pages.dev</div>
+          <div style="font-size:13px;font-weight:700;">NexWallet Security Check</div>
+          <div style="font-size:10px;color:var(--text-muted);">nexwallet.pages.dev · TLS 1.3</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);border-radius:20px;padding:5px 12px;">
-        <div style="width:7px;height:7px;border-radius:50%;background:#10b981;animation:pulse 2s infinite;"></div>
-        <span style="font-size:11px;font-weight:600;color:#10b981;">Secure Connection</span>
+      <div style="display:flex;align-items:center;gap:5px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:20px;padding:4px 10px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 2s infinite;"></div>
+        <span style="font-size:10px;font-weight:600;color:#10b981;">Encrypted</span>
       </div>
     </div>
 
-    <!-- Main verification card -->
+    <!-- ── Main card ── -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;overflow:hidden;">
 
-      <!-- Card header -->
-      <div style="padding:24px 24px 0;">
-        <div style="text-align:center;margin-bottom:20px;">
-          <div class="animate-float" style="font-size:52px;margin-bottom:14px;">🛡️</div>
-          <h2 style="font-size:20px;font-weight:800;margin-bottom:6px;">Identity Verification</h2>
-          <p style="font-size:13px;color:var(--text-muted);line-height:1.6;">To keep your wallet secure, please verify<br/>your identity before proceeding.</p>
+      <!-- Header -->
+      <div style="padding:24px 24px 0;text-align:center;">
+        <div class="animate-float" style="font-size:48px;margin-bottom:12px;">🔐</div>
+        <h2 style="font-size:19px;font-weight:800;margin-bottom:5px;">Verify Your Identity</h2>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:20px;">Choose a method and enter the OTP<br/>sent to your registered contact.</p>
+
+        <!-- Step flow indicator -->
+        <div class="cf-step" id="cfStepIndicator">
+          <div class="cf-step-dot active" id="cfStepDot1">1</div>
+          <div class="cf-step-line" id="cfStepLine1"></div>
+          <div class="cf-step-dot pending" id="cfStepDot2">2</div>
+          <div class="cf-step-line" id="cfStepLine2"></div>
+          <div class="cf-step-dot pending" id="cfStepDot3">✓</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:20px;padding:0 4px;">
+          <span>Choose Method</span><span>Enter OTP</span><span>Verified</span>
         </div>
 
-        <!-- Method selector tabs -->
-        <div class="tab-bar" style="margin-bottom:20px;" id="cfVerifyTabs">
-          <button class="tab-item active" onclick="cfSwitchMethod('email')" id="cfTab-email"><i class="fas fa-envelope" style="margin-right:5px;"></i>Email</button>
-          <button class="tab-item" onclick="cfSwitchMethod('phone')" id="cfTab-phone"><i class="fas fa-mobile-alt" style="margin-right:5px;"></i>Phone</button>
-          <button class="tab-item" onclick="cfSwitchMethod('aadhar')" id="cfTab-aadhar"><i class="fas fa-id-card" style="margin-right:5px;"></i>Aadhaar</button>
+        <!-- Method tabs -->
+        <div class="tab-bar" id="cfVerifyTabs" style="margin-bottom:0;">
+          <button class="tab-item active" onclick="cfSwitchMethod('email')"  id="cfTab-email" ><i class="fas fa-envelope"   style="margin-right:4px;font-size:11px;"></i>Email</button>
+          <button class="tab-item"        onclick="cfSwitchMethod('phone')"  id="cfTab-phone" ><i class="fas fa-mobile-alt" style="margin-right:4px;font-size:11px;"></i>Phone</button>
+          <button class="tab-item"        onclick="cfSwitchMethod('aadhar')" id="cfTab-aadhar"><i class="fas fa-id-card"    style="margin-right:4px;font-size:11px;"></i>Aadhaar</button>
         </div>
       </div>
 
-      <!-- ── Email panel ── -->
-      <div id="cfPanel-email" style="padding:0 24px 24px;">
-        <div style="margin-bottom:14px;">
-          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">EMAIL ADDRESS</label>
-          <div style="position:relative;">
-            <i class="fas fa-envelope" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;"></i>
-            <input id="cfEmailInput" class="input-field" type="email" placeholder="you@example.com" style="padding-left:40px;" oninput="cfClearError()"/>
+      <!-- ── PHASE A: Input identifier ── -->
+      <div id="cfPhaseA" style="padding:20px 24px 0;">
+
+        <!-- Email panel -->
+        <div id="cfPanel-email">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">YOUR EMAIL ADDRESS</label>
+          <div style="position:relative;margin-bottom:14px;">
+            <i class="fas fa-envelope" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;"></i>
+            <input id="cfEmailInput" class="input-field" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" style="padding-left:40px;" oninput="cfClearMsg()"/>
           </div>
-        </div>
-        <div id="cfEmailOtpRow" style="display:none;margin-bottom:14px;">
-          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">ENTER OTP <span id="cfEmailOtpMsg" style="color:#6366f1;font-weight:500;font-size:11px;"></span></label>
-          <div style="display:flex;gap:8px;">
-            <input id="cfEmailOtpInput" class="input-field" type="text" placeholder="6-digit OTP" maxlength="6" style="letter-spacing:6px;font-size:18px;font-weight:700;text-align:center;" oninput="cfClearError()"/>
-            <button onclick="cfSendEmailOtp()" id="cfEmailResendBtn" class="btn-secondary" style="white-space:nowrap;padding:0 14px;font-size:12px;display:none;">Resend</button>
-          </div>
-        </div>
-        <div id="cfEmailSendRow">
-          <button class="btn-primary" style="width:100%;padding:13px;" onclick="cfSendEmailOtp()">
+          <button class="btn-primary" style="width:100%;padding:13px;margin-bottom:6px;" onclick="cfSendOtp('email')" id="cfEmailSendBtn">
             <i class="fas fa-paper-plane"></i> Send OTP to Email
           </button>
         </div>
-        <div id="cfEmailVerifyRow" style="display:none;">
-          <button class="btn-primary" style="width:100%;padding:13px;" onclick="cfVerifyOtp('email')">
-            <i class="fas fa-check-circle"></i> Verify OTP
-          </button>
-        </div>
-      </div>
 
-      <!-- ── Phone panel ── -->
-      <div id="cfPanel-phone" style="display:none;padding:0 24px 24px;">
-        <div style="margin-bottom:14px;">
-          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">MOBILE NUMBER</label>
-          <div style="display:flex;gap:8px;">
+        <!-- Phone panel -->
+        <div id="cfPanel-phone" style="display:none;">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">YOUR MOBILE NUMBER</label>
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
             <div style="padding:12px 14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;color:var(--text-muted);font-size:14px;white-space:nowrap;flex-shrink:0;">🇮🇳 +91</div>
-            <input id="cfPhoneInput" class="input-field" type="tel" placeholder="98765 43210" maxlength="10" oninput="cfClearError()"/>
+            <input id="cfPhoneInput" class="input-field" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="98765 43210" maxlength="10" oninput="cfClearMsg();this.value=this.value.replace(/\D/g,'')"/>
           </div>
-        </div>
-        <div id="cfPhoneOtpRow" style="display:none;margin-bottom:14px;">
-          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">ENTER OTP <span id="cfPhoneOtpMsg" style="color:#6366f1;font-weight:500;font-size:11px;"></span></label>
-          <div style="display:flex;gap:8px;">
-            <input id="cfPhoneOtpInput" class="input-field" type="text" placeholder="6-digit OTP" maxlength="6" style="letter-spacing:6px;font-size:18px;font-weight:700;text-align:center;" oninput="cfClearError()"/>
-            <button onclick="cfSendPhoneOtp()" id="cfPhoneResendBtn" class="btn-secondary" style="white-space:nowrap;padding:0 14px;font-size:12px;display:none;">Resend</button>
-          </div>
-        </div>
-        <div id="cfPhoneSendRow">
-          <button class="btn-primary" style="width:100%;padding:13px;" onclick="cfSendPhoneOtp()">
-            <i class="fas fa-sms"></i> Send OTP to Phone
+          <button class="btn-primary" style="width:100%;padding:13px;margin-bottom:6px;" onclick="cfSendOtp('phone')" id="cfPhoneSendBtn">
+            <i class="fas fa-sms"></i> Send OTP via SMS
           </button>
         </div>
-        <div id="cfPhoneVerifyRow" style="display:none;">
-          <button class="btn-primary" style="width:100%;padding:13px;" onclick="cfVerifyOtp('phone')">
-            <i class="fas fa-check-circle"></i> Verify OTP
+
+        <!-- Aadhaar panel -->
+        <div id="cfPanel-aadhar" style="display:none;">
+          <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-info-circle" style="color:#f59e0b;margin-top:1px;flex-shrink:0;"></i>
+            <span style="font-size:12px;color:#f59e0b;line-height:1.5;">OTP will be sent to your <strong>Aadhaar-linked mobile number</strong> as per UIDAI records.</span>
+          </div>
+          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">AADHAAR NUMBER (12 digits)</label>
+          <div style="position:relative;margin-bottom:14px;">
+            <i class="fas fa-id-card" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;"></i>
+            <input id="cfAadharInput" class="input-field" type="text" inputmode="numeric" pattern="[0-9 ]*" placeholder="XXXX XXXX XXXX" maxlength="14" style="padding-left:40px;" oninput="formatAadharInput(this);cfClearMsg()"/>
+          </div>
+          <button class="btn-primary" style="width:100%;padding:13px;margin-bottom:6px;" onclick="cfSendOtp('aadhar')" id="cfAadharSendBtn">
+            <i class="fas fa-fingerprint"></i> Send OTP to Aadhaar-linked Number
           </button>
         </div>
+
+      </div><!-- /cfPhaseA -->
+
+      <!-- ── PHASE B: OTP entry (shown after OTP sent) ── -->
+      <div id="cfPhaseB" style="display:none;padding:20px 24px 0;">
+
+        <!-- Delivery confirmation banner -->
+        <div id="cfDeliveryBanner" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:10px 14px;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+          <i id="cfDeliveryIcon" class="fas fa-paper-plane" style="color:#6366f1;flex-shrink:0;"></i>
+          <span id="cfDeliveryText" style="font-size:12px;color:var(--text);line-height:1.5;"></span>
+        </div>
+
+        <!-- OTP label -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;">ENTER 6-DIGIT OTP</label>
+          <button id="cfResendBtn" onclick="cfResend()" style="background:none;border:none;color:#6366f1;font-size:12px;font-weight:600;cursor:pointer;display:none;">
+            <i class="fas fa-redo" style="font-size:10px;"></i> <span id="cfResendLabel">Resend</span>
+          </button>
+        </div>
+
+        <!-- 6 individual OTP digit boxes -->
+        <div class="otp-box-row" id="cfOtpBoxes">
+          <input class="otp-digit" id="cfOtp0" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code"/>
+          <input class="otp-digit" id="cfOtp1" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"/>
+          <input class="otp-digit" id="cfOtp2" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"/>
+          <input class="otp-digit" id="cfOtp3" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"/>
+          <input class="otp-digit" id="cfOtp4" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"/>
+          <input class="otp-digit" id="cfOtp5" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1"/>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:16px;">OTP auto-submits when all 6 digits are entered</p>
+
+        <button class="btn-primary" style="width:100%;padding:13px;margin-bottom:6px;" onclick="cfVerifyOtp()" id="cfVerifyBtn">
+          <i class="fas fa-check-circle"></i> Verify OTP
+        </button>
+        <button class="btn-secondary" style="width:100%;padding:10px;" onclick="cfBackToInput()">
+          <i class="fas fa-arrow-left"></i> Change details
+        </button>
+
+      </div><!-- /cfPhaseB -->
+
+      <!-- ── Message bar (always above footer) ── -->
+      <div id="cfMsgBar" style="display:none;margin:16px 24px 0;padding:11px 15px;border-radius:10px;font-size:13px;font-weight:500;display:flex;align-items:flex-start;gap:8px;"></div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid var(--border);margin-top:20px;padding:14px 24px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-lock" style="color:#6366f1;font-size:12px;flex-shrink:0;"></i>
+        <span style="font-size:11px;color:var(--text-muted);line-height:1.4;">256-bit encrypted · OTP valid 10 min · Max 3 attempts</span>
       </div>
+    </div><!-- /card -->
 
-      <!-- ── Aadhaar panel ── -->
-      <div id="cfPanel-aadhar" style="display:none;padding:0 24px 24px;">
-        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#f59e0b;">
-          <i class="fas fa-info-circle"></i> OTP will be sent to your Aadhaar-linked mobile number as per UIDAI records.
-        </div>
-        <div style="margin-bottom:14px;">
-          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">AADHAAR NUMBER</label>
-          <div style="position:relative;">
-            <i class="fas fa-id-card" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;"></i>
-            <input id="cfAadharInput" class="input-field" type="text" placeholder="XXXX XXXX XXXX" maxlength="14" style="padding-left:40px;" oninput="formatAadharInput(this);cfClearError()"/>
-          </div>
-        </div>
-        <div id="cfAadharOtpRow" style="display:none;margin-bottom:14px;">
-          <label style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;display:block;margin-bottom:6px;">ENTER OTP <span id="cfAadharOtpMsg" style="color:#6366f1;font-weight:500;font-size:11px;"></span></label>
-          <div style="display:flex;gap:8px;">
-            <input id="cfAadharOtpInput" class="input-field" type="text" placeholder="6-digit OTP" maxlength="6" style="letter-spacing:6px;font-size:18px;font-weight:700;text-align:center;" oninput="cfClearError()"/>
-            <button onclick="cfSendAadharOtp()" id="cfAadharResendBtn" class="btn-secondary" style="white-space:nowrap;padding:0 14px;font-size:12px;display:none;">Resend</button>
-          </div>
-        </div>
-        <div id="cfAadharSendRow">
-          <button class="btn-primary" style="width:100%;padding:13px;" onclick="cfSendAadharOtp()">
-            <i class="fas fa-fingerprint"></i> Send OTP to Aadhaar Number
-          </button>
-        </div>
-        <div id="cfAadharVerifyRow" style="display:none;">
-          <button class="btn-primary" style="width:100%;padding:13px;" onclick="cfVerifyOtp('aadhar')">
-            <i class="fas fa-check-circle"></i> Verify OTP
-          </button>
-        </div>
-      </div>
-
-      <!-- Error / info message bar -->
-      <div id="cfErrorBar" style="display:none;margin:0 24px 20px;padding:12px 16px;border-radius:12px;font-size:13px;font-weight:500;"></div>
-
-      <!-- Security note footer -->
-      <div style="border-top:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:10px;">
-        <i class="fas fa-lock" style="color:#6366f1;font-size:14px;flex-shrink:0;"></i>
-        <span style="font-size:11px;color:var(--text-muted);line-height:1.5;">This verification is powered by NexWallet's security layer. Your data is end-to-end encrypted and never stored.</span>
-      </div>
-    </div>
-
-    <!-- Cloudflare-style footer branding -->
-    <div style="text-align:center;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;">
-      <i class="fas fa-shield-alt" style="color:var(--text-muted);font-size:12px;"></i>
-      <span style="font-size:11px;color:var(--text-muted);">Protected by NexWallet Security · AES-256 Encrypted</span>
+    <div style="text-align:center;margin-top:16px;">
+      <span style="font-size:11px;color:var(--text-muted);"><i class="fas fa-shield-alt" style="margin-right:4px;"></i>Powered by NexWallet Security Engine v2</span>
     </div>
   </div>
 </div>

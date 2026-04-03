@@ -1,5 +1,10 @@
 # 💎 NexWallet — Hybrid Crypto & Fiat Wallet
 
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Poppins&size=26&pause=1000&color=00F7FF&center=true&vCenter=true&width=800&lines=NexWallet;Smart+Digital+Wallet+System;Add+Send+Receive+Transactions;Track+Balance+Instantly;Simulation+Only+Not+Real+Banking+System" />
+</p>
+
+
 <div align="center">
 
 ![NexWallet Banner](https://img.shields.io/badge/NexWallet-v2.0-6366f1?style=for-the-badge&logo=bitcoin&logoColor=white)

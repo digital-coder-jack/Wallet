@@ -230,9 +230,13 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 <div align="center">
   <strong>Built with ❤️ for India's crypto community</strong><br/>
   <sub>⭐ Star this repo if you find it useful!</sub>
-</div>
+
 
 ## Wallet Interface (Before & After Opening)
 
-<img width="513" height="1037" alt="Screenshot_2026_0423_210425" src="https://github.com/user-attachments/assets/caf101e8-73cb-41dc-b1ed-8bbc626715bb" />
-<img width="513" height="1031" alt="Screenshot_2026_0423_210503" src="https://github.com/user-attachments/assets/e23c4b2f-9b2d-4e25-bb0c-fdbff90875c9" />
+<table>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/33248dbb-1b10-492d-ba8d-775e60d4b5c9" width="200"/></td>
+    <td><img src="https://github.com/user-attachments/assets/556dfdbc-12a6-452d-8059-2ce263f6a63f" width="200"/></td>
+  </tr>
+</table>

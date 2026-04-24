@@ -227,10 +227,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-<div align="center">
-  <strong>Built with ❤️ for India's crypto community</strong><br/>
-  <sub>⭐ Star this repo if you find it useful!</sub>
-
 
 ## Wallet Interface (Before & After Opening)
 
@@ -240,3 +236,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
     <td><img src="https://github.com/user-attachments/assets/556dfdbc-12a6-452d-8059-2ce263f6a63f" width="200"/></td>
   </tr>
 </table>
+
+<div align="center">
+  <strong>Built with ❤️ for India's crypto community</strong><br/>
+  <sub>⭐ Star this repo if you find it useful!</sub>
